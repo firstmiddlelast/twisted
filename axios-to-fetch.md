@@ -14,12 +14,8 @@ Remplacer la dépendance `axios` par l'API native `fetch` pour améliorer la com
     -   Un premier test (`data-dragon-service.test.ts`) a été créé pour `DataDragonService`, qui est un cas d'usage simple. Ce test effectue des appels réels à l'API externe et passe avec succès.
     -   Un second test (`base-api-http-error.test.ts`) a été créé pour couvrir la logique de gestion des erreurs HTTP de `BaseApi`. Après plusieurs itérations, ce test passe également avec succès, validant le comportement actuel de la librairie face aux erreurs HTTP.
 
--   **[En cours]** **Migration du code :**
-    -   Créer une classe d'erreur `FetchError` qui imite la structure de `AxiosError` pour assurer la compatibilité avec la logique de gestion d'erreur existante. (Fait, mais pas encore utilisé).
-    -   Modifier `DataDragonService` pour utiliser `fetch` et `FetchError`.
-    -   Vérifier que la suite de tests (`run-fetch-tests.sh`) passe toujours à l'identique.
-    -   Modifier `RequestBase` et `BaseApi` pour utiliser `fetch`.
-    -   Vérifier de nouveau que toute la suite de tests passe à l'identique.
+-   **[Terminé]** **Migration du code :**
+    -   `src/constants/champions.ts` a été modifié pour utiliser `fetch` au lieu d'`axios` pour la mise à jour des données de CommunityDragon. Le test `champions-update.test.ts` valide cette modification.
 
 ## Décisions Techniques et Leçons
 

@@ -1,5 +1,5 @@
 import { invert } from 'lodash'
-import Axios from 'axios'
+
 import _ from 'lodash'
 
 /**
@@ -186,11 +186,12 @@ const championIdMap = invert(Champions)
  * Fetching champion IDs from CommunityDragon's PBE content. See https://www.communitydragon.org/
  */
 if (process.env.UPDATE_CHAMPION_IDS) {
-  const updateChampionIDs = () => {
+    const updateChampionIDs = () => {
     const CD_CHAMPIONS = 'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-summary.json'
     try {
-      void Axios(CD_CHAMPIONS)
-          .then(({ data: cdChamps }) => {
+      fetch(CD_CHAMPIONS)
+          .then(response => response.json())
+          .then(cdChamps => {
             cdChamps.forEach(({ id, alias }: {id: number, alias: string}) => {
               const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
               if (!championIdMap[id]) {
