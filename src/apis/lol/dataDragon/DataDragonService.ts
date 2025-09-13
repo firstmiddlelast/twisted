@@ -1,4 +1,3 @@
-import Axios, { AxiosRequestConfig } from 'axios'
 import { DataDragonEnum } from '../../../constants/dataDragon'
 import { RealmServers } from '../../../constants/realmServers'
 import { RealmDTO, ChampionsDataDragon, QueuesDataDragonDTO, GameModesDataDragonDTO } from '../../../models-dto'
@@ -7,6 +6,7 @@ import { ChampionsDataDragonDetailsSolo } from '../../../models-dto/data-dragon/
 import { MapsDataDragonDTO } from '../../../models-dto/data-dragon/maps.datadragon.dto'
 import { GameTypesDataDragonDTO } from '../../../models-dto/data-dragon/game-types.datadragon.dto'
 import { RunesReforgedDTO } from '../../../models-dto/data-dragon/runes-reforged.dto'
+import { FetchError } from '../../../errors/fetch.error'
 
 const defaultLang = 'en_US'
 
@@ -18,11 +18,19 @@ const defaultLang = 'en_US'
 export class DataDragonService {
   // Internal methods
   private async request<T> (path: string, base: DataDragonEnum = DataDragonEnum.BASE): Promise<T> {
-    const options: AxiosRequestConfig = {
-      url: `${base}/${path}`,
-      method: 'GET'
+    const response = await fetch(`${base}/${path}`, { method: 'GET' });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new FetchError(
+        `HTTP error! status: ${response.status}`,
+        response.status,
+        errorData,
+        response.headers,
+        undefined,
+        undefined
+      );
     }
-    return (await Axios(options)).data
+    return await response.json();
   }
   // Riot requests
   // Data dragon

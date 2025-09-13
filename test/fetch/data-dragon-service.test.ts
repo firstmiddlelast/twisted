@@ -27,7 +27,7 @@ describe('DataDragonService (Integration Tests)', () => {
 
   it('should get versions from the real API', async () => {
     const result = await service.getVersions();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(typeof result[0]).toBe('string');
   });
@@ -42,14 +42,14 @@ describe('DataDragonService (Integration Tests)', () => {
 
   it('should get languages from the real API', async () => {
     const result = await service.getLanguages();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(typeof result[0]).toBe('string');
   });
 
   it('should get runes reforged from the real API', async () => {
     const result = await service.getRunesReforged('en_US');
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('id');
     expect(result[0]).toHaveProperty('key');
@@ -81,35 +81,35 @@ describe('DataDragonService (Integration Tests)', () => {
 
   it('should get queues from the real API', async () => {
     const result = await service.getQueues();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('queueId');
   });
 
   it('should get seasons from the real API', async () => {
     const result = await service.getSeasons();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('id');
   });
 
   it('should get maps from the real API', async () => {
     const result = await service.getMaps();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('mapId');
   });
 
   it('should get game modes from the real API', async () => {
     const result = await service.getGameModes();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('gameMode');
   });
 
   it('should get game types from the real API', async () => {
     const result = await service.getGameTypes();
-    expect(result).toBeInstanceOf(Array);
+    expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('gametype');
   });
