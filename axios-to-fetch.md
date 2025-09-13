@@ -17,6 +17,7 @@ Remplacer la dépendance `axios` par l'API native `fetch` pour améliorer la com
 -   **[Terminé]** **Migration du code :**
     -   `src/constants/champions.ts` a été modifié pour utiliser `fetch` au lieu d'`axios` pour la mise à jour des données de CommunityDragon. Le test `champions-update.test.ts` valide cette modification.
     -   `src/apis/lol/dataDragon/DataDragonService.ts` a été modifié pour utiliser `fetch` et la classe `FetchError`. Le test `data-dragon-service.test.ts` valide cette modification.
+    -   `src/apis/lol/seed/seed.ts` a été modifié pour utiliser `fetch` et la classe `FetchError`. Le test `seed-api.test.ts` valide cette modification.
 
 ## Décisions Techniques et Leçons
 
