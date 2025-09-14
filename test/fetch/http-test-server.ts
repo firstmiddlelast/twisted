@@ -25,6 +25,10 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ data: "success" }));
       break;
+    case path.endsWith("/status"):
+      res.writeHead(200, { 'Content-Type': 'application/json', 'x-app-rate-limit': 'no-limit' });
+      res.end(JSON.stringify({locale:"en_GB", content:"Account Transfers Unavailable"} as LolStatusContentDTO));
+      break;
     case path.includes("/delay/"):
       const delayMs = parseInt(path.substring(path.indexOf('/delay')).split('/')[2]);
       console.debug(`#${requestId} : ${Date.now()} - Waiting ${delayMs} ms`)
