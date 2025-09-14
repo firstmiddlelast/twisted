@@ -1,31 +1,42 @@
-const http = require('http');
+import http from 'http';
+import {LolStatusContentDTO} from "../../src/models-dto/status/status-v4"
+import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from 'http-status-codes';
 
 const PORT = 8080;
 
-const server = http.createServer((req: any, res: any) => {
-  const url = new URL(req.url, `http://localhost:${PORT}`);
-  const path = url.pathname;
+let requestCounter=0;
 
+const server = http.createServer((req, res) => {
+  const path = new URL(req.url!, `http://localhost:${PORT}`).pathname;
+  console.log ('http request path : ' + path)
+  const apiData : LolStatusContentDTO = {content:"ok",locale:"en-US"} 
+
+  const requestId = requestCounter ++;
   switch (true) {
-    case path.endsWith("/404"):
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end("Not Found");
-      break;
     case path.endsWith("/429"):
-      res.writeHead(429, { 'Content-Type': 'text/plain', 'Retry-After': '1' });
+      res.writeHead(TOO_MANY_REQUESTS, { 'Content-Type': 'text/plain', 'x-app-rate-limit': 'none' });
       res.end("Too Many Requests");
       break;
     case path.endsWith("/503"):
-      res.writeHead(503, { 'Content-Type': 'text/plain' });
+      res.writeHead(SERVICE_UNAVAILABLE, { 'Content-Type': 'text/plain' });
       res.end("Service Unavailable");
       break;
     case path.endsWith("/200"):
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ data: "success" }));
       break;
+    case path.includes("/delay/"):
+      const delayMs = parseInt(path.substring(path.indexOf('/delay')).split('/')[2]);
+      console.debug(`#${requestId} : ${Date.now()} - Waiting ${delayMs} ms`)
+      setTimeout(()=>{
+        console.debug(`#${requestId} : ${Date.now()} - Resuming after ${delayMs} ms`)
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ data: apiData}));
+      }, delayMs)
+      break;
     default:
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end("Hello from HTTP test server!");
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end("Not Found");
       break;
   }
 });
