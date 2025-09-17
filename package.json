@@ -60,10 +60,8 @@
   },
   "dependencies": {
     "@types/http-server": "^0.12.4",
-    "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "http-status-codes": "^2.3.0",
-    "lodash": "^4.17.21",
     "promise-queue": "^2.2.5",
     "uuid": "^9.0.1"
   },

@@ -228,8 +228,7 @@ export function getChampionName (champ: number): string {
  */
 export function getChampionNameCapital (champ: number | string): string {
   let name = typeof champ === 'number' ? getChampionName(champ) : champ
-  name = name.toLowerCase().charAt(0).toUpperCase() + name.toLowerCase().substring(1)
-  name = name.charAt(0).toUpperCase() + name.slice(1)
+  name = name.match(/[a-zA-Z]+/g)!.map(name=>name.toLowerCase().charAt(0).toUpperCase() + name.toLowerCase().substring(1)).join("")
   switch (name) {
     case 'Reksai':
       return 'RekSai'
