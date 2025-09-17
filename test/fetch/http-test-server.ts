@@ -22,7 +22,7 @@ const server = http.createServer((req, res) => {
       res.end("Service Unavailable");
       break;
     case path.endsWith("/200"):
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { 'Content-Type': 'application/json',  });
       res.end(JSON.stringify({ data: "success" }));
       break;
     case path.endsWith("/status"):

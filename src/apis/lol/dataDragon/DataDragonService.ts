@@ -18,19 +18,16 @@ const defaultLang = 'en_US'
 export class DataDragonService {
   // Internal methods
   private async request<T> (path: string, base: DataDragonEnum = DataDragonEnum.BASE): Promise<T> {
-    const response = await fetch(`${base}/${path}`, { method: 'GET' });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new FetchError(
-        `HTTP error! status: ${response.status}`,
-        response.status,
-        errorData,
-        response.headers,
-        undefined,
-        undefined
-      );
-    }
-    return await response.json();
+    return fetch(`${base}/${path}`, { method: 'GET' })
+    .then (response => {
+      if (!response.ok) {
+        throw new FetchError(
+          `HTTP error! status: ${response.status}`);
+      }
+      return response.json().catch(jsonError => {
+        throw new FetchError ("Error retrieving JSON object : " + jsonError.message)
+      });
+    })
   }
   // Riot requests
   // Data dragon

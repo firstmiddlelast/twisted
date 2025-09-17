@@ -1,5 +1,3 @@
-export interface IErrors {
+export interface IErrors extends Error {
   status: number
-  message: string
-  name: string
 }

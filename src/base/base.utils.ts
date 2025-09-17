@@ -1,5 +1,5 @@
-import { AxiosRequestConfig } from 'axios'
 import qs from 'querystring'
+import { FetchRequestConfig } from './fetch-request-config'
 
 export interface IParams {
   [key: string]: string | number
@@ -55,7 +55,7 @@ export function waiter (ms: number) {
   })
 }
 
-export function getUrlFromOptions (options: AxiosRequestConfig): string {
+export function getUrlFromOptions (options: FetchRequestConfig): string {
   let uri = options.url as string
   if (options.params) {
     uri += '?'

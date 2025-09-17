@@ -1,7 +1,3 @@
-import { invert } from 'lodash'
-
-import _ from 'lodash'
-
 /**
  * Champions - Used as fallback
  */
@@ -180,30 +176,37 @@ export enum Champions {
   YUNARA = 804
 }
 
-const championIdMap = invert(Champions)
+interface Dictionary<T> {
+  [index: string]: T;
+}
+
+const championIdMap : Dictionary<string> = {};
+Object.entries(Champions).forEach(
+  ([key, value]) => {if (typeof value === 'number') championIdMap[value]=key}
+)
 
 /**
  * Fetching champion IDs from CommunityDragon's PBE content. See https://www.communitydragon.org/
  */
+const CD_CHAMPIONS = 'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-summary.json'
 if (process.env.UPDATE_CHAMPION_IDS) {
-    const updateChampionIDs = () => {
-    const CD_CHAMPIONS = 'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-summary.json'
-    try {
-      fetch(CD_CHAMPIONS)
-          .then(response => response.json())
-          .then(cdChamps => {
-            cdChamps.forEach(({ id, alias }: {id: number, alias: string}) => {
-              const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
-              if (!championIdMap[id]) {
-                championIdMap[id] = championIdMap[id] || championAlias
-                championIdMap[championAlias] = championIdMap[championAlias] || '' + id
-              }
-            })
-          })
-    } catch (e) {
-      console.warn('Updating champion IDs failed')
+  const updateChampionIDs = () => {
+    fetch(CD_CHAMPIONS)
+      .then(response => response.json())
+      .then(cdChamps => {
+        cdChamps.forEach(({ id, alias }: {id: number, alias: string}) => {
+          const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
+          if (!championIdMap[id]) {
+            championIdMap[id] = championIdMap[id] || championAlias
+            championIdMap[championAlias] = championIdMap[championAlias] || '' + id
+          }
+        })
+      })
+      .catch(e => {
+        console.warn('Updating champion IDs failed : ' + e)
+      })
     }
-  }
+
   // Schedule once every day.
   setInterval(updateChampionIDs, 1000 * 60 * 60 * 24)
   updateChampionIDs()
@@ -225,7 +228,7 @@ export function getChampionName (champ: number): string {
  */
 export function getChampionNameCapital (champ: number | string): string {
   let name = typeof champ === 'number' ? getChampionName(champ) : champ
-  name = _.camelCase(name.toLowerCase())
+  name = name.toLowerCase().charAt(0).toUpperCase() + name.toLowerCase().substring(1)
   name = name.charAt(0).toUpperCase() + name.slice(1)
   switch (name) {
     case 'Reksai':

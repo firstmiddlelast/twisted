@@ -1,6 +1,6 @@
 import { RequestBase } from '../../src/base/request.base';
 import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from 'http-status-codes';
-import { AxiosError } from 'axios';
+import { ResponseError } from '../../src/errors/response.error';
 
 jest.setTimeout(20000); // Increased timeout for concurrency tests
 
@@ -78,8 +78,8 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
         await RequestBase.request(options);
         fail('Should have thrown an error');
       } catch (e) {
-        expect(e).toBeInstanceOf(AxiosError);
-        const error = e as AxiosError;
+        expect(e).toBeInstanceOf(ResponseError);
+        const error = e as ResponseError;
         expect(error.status).toBe(404);
       }
     });
@@ -94,8 +94,8 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
         fail('Should have thrown an error');
       }
       catch (e) {
-        expect(e).toBeInstanceOf(AxiosError);
-        const error = e as AxiosError;
+        expect(e).toBeInstanceOf(ResponseError);
+        const error = e as ResponseError;
         expect(error.status).toBe(TOO_MANY_REQUESTS);
       }
     });
@@ -110,8 +110,8 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
         fail('Should have thrown an error');
       }
       catch (e) {
-        expect(e).toBeInstanceOf(AxiosError);
-        const error = e as AxiosError;
+        expect(e).toBeInstanceOf(ResponseError);
+        const error = e as ResponseError;
         expect(error.status).toBe(SERVICE_UNAVAILABLE);
       }
     });

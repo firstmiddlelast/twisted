@@ -47,7 +47,7 @@ describe('BaseApi request HTTP Error Handling', () => {
   //  -the test api http server provides a correct api response
   //  -the rateLimits fields are correctly retrieved
   //  -the response is correctly typed and fields available - testing only AppRa
-  it('status 200 OK HTTP response content', async () => {
+  it('status OK HTTP response content', async () => {
     const endpointStatus = { path: 'status', version: 1, prefix: 'lol' };
     const apiResponse = await localApi.request<ApiResponseDTO<LolStatusContentDTO>>(region, endpointStatus)
     expect(apiResponse.response.locale).toBe("en_GB")
@@ -80,12 +80,12 @@ describe('BaseApi request HTTP Error Handling', () => {
     }
     catch (e) {
       expect(e).toBeInstanceOf(RateLimitError);
-      const error = e as RateLimitError;
-      expect(error.status).toBe(TOO_MANY_REQUESTS);
+      const rle = e as RateLimitError;
+      expect(rle.status).toBe(TOO_MANY_REQUESTS);
       // We only test for .AppRateLimit on our local test server
       // if it's ok, that means BaseApi.getRateLimits() is working properly
       // and all other rate limit headers will be properly retrieved from the live Riot API servers. 
-      expect(error.rateLimits.AppRateLimit).toBe("none");
+      expect(rle.rateLimits.AppRateLimit).toBe("none");
       // TODO : test .message, .name
     }
   });

@@ -59,6 +59,7 @@
     "typescript": "^5.3.2"
   },
   "dependencies": {
+    "@types/http-server": "^0.12.4",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "http-status-codes": "^2.3.0",

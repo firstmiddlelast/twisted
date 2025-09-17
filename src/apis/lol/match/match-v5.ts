@@ -1,8 +1,6 @@
 import { NOT_FOUND } from 'http-status-codes'
 import { RegionGroups } from '../../../constants'
 import { endpointsV5 } from '../../../endpoints/endpoints'
-import { GenericError } from '../../../errors'
-import { ApiResponseDTO } from '../../../models-dto'
 import { MatchV5DTOs, MatchV5TimelineDTOs } from '../../../models-dto/matches/match-v5'
 import { MatchQueryV5DTO } from '../../../models-dto/matches/query-v5'
 import { BaseApiLol } from '../base/base.api.lol'
@@ -11,14 +9,6 @@ import { BaseApiLol } from '../base/base.api.lol'
  * Match methods
  */
 export class MatchV5Api extends BaseApiLol {
-  // Private methods
-  private generateResponse (error: GenericError): ApiResponseDTO<string[]> {
-    return {
-      rateLimits: error.rateLimits,
-      response: []
-    }
-  }
-
   /**
    * Get match details
    * @param matchId Match id
@@ -42,11 +32,22 @@ export class MatchV5Api extends BaseApiLol {
     }
     try {
       return await this.request<string[]>(region, endpointsV5.MatchListing, params, false, query)
-    } catch (e) {
-      if (typeof e === 'object' && e !== null && 'status' in e && e.status !== NOT_FOUND) {
+    } catch (e:any) {
+      // NOTE There is probably a logic here for returning an empty list of matches instead of letting
+      // the exception bubble, and some applications may rely on it, so I'm not changing it, but it is
+      // a bad idea because it will compromise retrieved data integrity in case of api access error
+      // (some match lists will be flagged as "retrieved successfully and empty" instead of "should be retried later")
+      if (
+        (typeof e === 'object' && e !== null 
+          && 'status' in e && e.status !== NOT_FOUND)
+          || e.rateLimits === undefined
+        ) {
         throw e
       }
-      return this.generateResponse(e as GenericError)
+      return {
+        rateLimits: e.rateLimits,
+        response: []
+      }
     }
   }
 

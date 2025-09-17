@@ -34,79 +34,95 @@ describe('Use the live API with an actual API key', () => {
     })
 
     it('Get live lol status - wrong API key', async () => {
-        try {
-            await new LolApi({key:"WRONG"}).StatusV4.get(Regions.EU_WEST);
-            fail ('Should throw an exception')
-        }
-        catch (e) {
-            expect(e).toBeInstanceOf(GenericError);
-            const ge = e as GenericError;
-            expect(ge.name).toBe(GenericError.name);
-            expect(ge.message).toBe("Request failed with status code 401");
-            expect(ge.body).toBeTruthy();
-            expect(ge.status).toBe(401);
-            expect(ge.error).toBeTruthy();
-            expect(ge.rateLimits).toBeTruthy();
-            expect(ge.rateLimits.RetryAfter).toBe(0);
-            // console.log ("WRONG KEY EXCEPTION : " + e + JSON.stringify(e))
-            // WRONG KEY EXCEPTION : GenericError: Request failed with status code 401
-            const expected = {
-                "name":"GenericError",
-                "status":401,
-                "body":{
-                    "status":{
-                        "message":"Forbidden","status_code":401}
-                    },
-                    "rateLimits":{
-                        "Type":null,"AppRateLimit":null,"AppRateLimitCount":null,
-                        "MethodRatelimitCount":null,"RetryAfter":0
-                    },
-                    "error":{
-                        "message":"Request failed with status code 401",
-                        "name":"AxiosError",
-                        "stack":"AxiosError: Request failed with status code 401\n    at settle (/home/p-h/dev/twisted-fetch/node_modules/axios/lib/core/settle.js:19:12)\n    at Unzip.handleStreamEnd (/home/p-h/dev/twisted-fetch/node_modules/axios/lib/adapters/http.js:617:11)\n    at Unzip.emit (node:events:530:35)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/home/p-h/dev/twisted-fetch/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
-                        "config":{
-                            "transitional":{
-                                "silentJSONParsing":true,"forcedJSONParsing":true,"clarifyTimeoutError":false
-                            },
-                            "adapter":["xhr","http","fetch"],
-                            "transformRequest":[null],"transformResponse":[null],"timeout":0,"xsrfCookieName":"XSRF-TOKEN","xsrfHeaderName":"X-XSRF-TOKEN","maxContentLength":-1,"maxBodyLength":-1,
-                            "env":{},
-                            "headers":{
-                                "Accept":"application/json, text/plain, */*","X-Riot-Token":"WRONG","User-Agent":"axios/1.12.1","Accept-Encoding":"gzip, compress, deflate, br"
-                            },
-                            "url":"https://euw1.api.riotgames.com/lol/status/v4/platform-data","method":"get","allowAbsoluteUrls":true
-                        },
-                        "code":"ERR_BAD_REQUEST",
-                        "status":401
-                    }
-            }
-        }
+      let e;
+      try {
+          await new LolApi({key:"WRONG_KEY"}).StatusV4.get(Regions.EU_WEST);
+      }
+      catch (caught) {
+        e=caught
+      }
+      expect(e).toBeDefined();
+      expect(e).toBeInstanceOf(GenericError);
+      const ge = e as GenericError;
+      expect(ge.name).toBe(GenericError.name);
+      console.debug("GENERIC_ERROR_STACK "+ge.stack)
+      expect(ge.message).toBe("Request failed with status code 401");
+      expect(ge.status).toBe(401);
+      console.debug('errortruthy')
+      expect(ge.error).toBeTruthy();
+      console.debug('bodytruthy' + ge.body)
+      expect(ge.body).toBeTruthy();
+      console.debug('bodyrate' + ge.rateLimits)
+      expect(ge.rateLimits).toBeTruthy();
+      expect(ge.rateLimits?.RetryAfter).toBeFalsy();
+      // console.debug ("WRONG KEY EXCEPTION : " + e + JSON.stringify(e))
+      // WRONG KEY EXCEPTION : GenericError: Request failed with status code 401
+      const expected = {
+          "name":"GenericError",
+          "status":401,
+          "body":{
+              "status":{
+                  "message":"Forbidden","status_code":401}
+              },
+              "rateLimits":{
+                  "Type":null,"AppRateLimit":null,"AppRateLimitCount":null,
+                  "MethodRatelimitCount":null,"RetryAfter":0
+              },
+              "error":{
+                  "message":"Request failed with status code 401",
+                  "name":"AxiosError",
+                  "stack":"AxiosError: Request failed with status code 401\n    at settle (/home/p-h/dev/twisted-fetch/node_modules/axios/lib/core/settle.js:19:12)\n    at Unzip.handleStreamEnd (/home/p-h/dev/twisted-fetch/node_modules/axios/lib/adapters/http.js:617:11)\n    at Unzip.emit (node:events:530:35)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/home/p-h/dev/twisted-fetch/node_modules/axios/lib/core/Axios.js:45:41)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+                  "config":{
+                      "transitional":{
+                          "silentJSONParsing":true,"forcedJSONParsing":true,"clarifyTimeoutError":false
+                      },
+                      "adapter":["xhr","http","fetch"],
+                      "transformRequest":[null],"transformResponse":[null],"timeout":0,"xsrfCookieName":"XSRF-TOKEN","xsrfHeaderName":"X-XSRF-TOKEN","maxContentLength":-1,"maxBodyLength":-1,
+                      "env":{},
+                      "headers":{
+                          "Accept":"application/json, text/plain, */*","X-Riot-Token":"WRONG","User-Agent":"axios/1.12.1","Accept-Encoding":"gzip, compress, deflate, br"
+                      },
+                      "url":"https://euw1.api.riotgames.com/lol/status/v4/platform-data","method":"get","allowAbsoluteUrls":true
+                  },
+                  "code":"ERR_BAD_REQUEST",
+                  "status":401
+              }
+      }
     })
 
     it('Get live lol status - wrong region', async () => {
+        console.debug("UNDICI"+process.versions.undici)
+        let status;
+        let e;
         try {
-            await new LolApi().StatusV4.get("GALAXY" as Regions);
-            fail ('Should throw an exception')
+            console.debug('GETSTATUS')
+            status = await new LolApi({debug:{logUrls:true,logTime:true}}).StatusV4.get("GALAXY" as Regions);
+            console.debug('GOTSTATUS')
         }
-        catch (e) {
-            // Champs récupérés d'AxiosError dans GenericError : 
-            // error.message vers .message, 
-            // error.response?.status vers .status, 
-            // error.response?.data vers .body
-            expect(e).toBeInstanceOf(GenericError);
-            const ge = e as GenericError;
-            expect(ge.message).toBeTruthy();
-                // ..mais pour cette erreur c'est 500 par défaut
-            expect(ge.status).toBe(500);
-                // ..mais pour cette erreur c'est undefined
-            expect(ge.body).toBeUndefined();
-            expect(ge.rateLimits).toBeTruthy();
-            expect(ge.rateLimits.RetryAfter).toBe(0);
-            // L'objet AxiosError est rangé dans le champ GenericError.error
-            expect(ge.error).toBeTruthy();
-            //console.log ("WRONG REGION EXCEPTION : " + JSON.stringify(e))
-            // TODO : check error properties (type, message, etc.)
+        catch (caught) {
+          e = caught
+        }
+        expect(status).toBeUndefined();
+        console.debug("exception catched : " + (e as TypeError).stack + " = " + JSON.stringify(e))
+          // Champs récupérés d'AxiosError dans GenericError : 
+          // error.message vers .message, 
+          // error.response?.status vers .status, 
+          // error.response?.data vers .body
+          console.debug(GenericError)
+          console.debug(GenericError.prototype.name)
+          expect(e).toBeInstanceOf(GenericError);
+          const ge = e as GenericError;
+          expect(ge.message).toBeTruthy();
+              // ..mais pour cette erreur c'est 500 par défaut
+          expect(ge.status).toBe(500);
+              // ..mais pour cette erreur c'est undefined
+          expect(ge.body).toBeUndefined();
+          expect(ge.rateLimits).toBeTruthy();
+          expect(ge.rateLimits?.RetryAfter).toBe(0);
+          // L'objet AxiosError est rangé dans le champ GenericError.error
+          expect(ge.error).toBeTruthy();
+          //console.debug ("WRONG REGION EXCEPTION : " + JSON.stringify(e))
+          // TODO : check error properties (type, message, etc.)
     /* Original message : 
     GenericError: getaddrinfo ENOTFOUND galaxy.api.riotgames.com
     at StatusV4Api.getError (/home/p-h/dev/twisted-fetch/src/base/base.ts:4924:12)
@@ -552,6 +568,6 @@ Original exception : {
   }
 }
 */
-        }
+        
     })
 })

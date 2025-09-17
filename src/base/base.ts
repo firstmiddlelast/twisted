@@ -1,5 +1,5 @@
-import { AxiosRequestConfig, AxiosResponse } from 'axios'
-import * as _ from 'lodash'
+import { FetchRequestConfig } from './fetch-request-config'
+import { ResponseError } from '../errors/response.error'
 import { ApiKeyNotFound } from '../errors'
 import { IEndpoint } from '../endpoints'
 import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from 'http-status-codes'
@@ -14,6 +14,7 @@ import { BaseConstants, BaseApiGames } from './base.const'
 import { Logger } from './logger.base'
 import { RequestBase } from './request.base'
 import { RegionGroups } from '../constants'
+import { FetchError } from '../errors/fetch.error'
 
 config()
 
@@ -58,13 +59,13 @@ export class BaseApi<Region extends string> {
     }
     if (typeof param.debug !== 'undefined') {
       if (typeof param.debug.logTime !== 'undefined') {
-        _.set(this.debug, 'logTime', param.debug.logTime)
+        this.debug.logTime= param.debug.logTime
       }
       if (typeof param.debug.logUrls !== 'undefined') {
-        _.set(this.debug, 'logUrls', param.debug.logUrls)
+        this.debug.logUrls = param.debug.logUrls
       }
       if (typeof param.debug.logRatelimits !== 'undefined') {
-        _.set(this.debug, 'logRatelimits', param.debug.logRatelimits)
+        this.debug.logRatelimits = param.debug.logRatelimits
       }
     }
     if(typeof param.baseURL !== 'undefined') {
@@ -78,15 +79,20 @@ export class BaseApi<Region extends string> {
     }
   }
 
-  private getRateLimits (headers: any): RateLimitDto {
+  // This value only exists for code correctness. 
+  // The only value actually used in this project is RetryAfter. 
+  public static readonly DEFAULT_RATE_LIMIT_VALUE:string = "";
+  public static readonly DEFAULT_RATE_LIMIT_RETRY_AFTER:number = 0;
+
+  public static getRateLimits (headers: Headers): RateLimitDto {
     return {
-      Type: _.get(headers, 'x-rate-limit-type', null),
-      AppRateLimit: _.get(headers, 'x-app-rate-limit', null),
-      AppRateLimitCount: _.get(headers, 'x-app-rate-limit-count', null),
-      MethodRateLimit: _.get(headers, 'x-method-rate-limit'),
-      MethodRatelimitCount: _.get(headers, 'x-method-rate-limit-count', null),
-      RetryAfter: +_.get(headers, 'retry-after', 0),
-      EdgeTraceId: _.get(headers, 'x-riot-edge-trace-id')
+      Type: headers.get('x-rate-limit-type')||undefined,
+      AppRateLimit: headers.get('x-app-rate-limit')||BaseApi.DEFAULT_RATE_LIMIT_VALUE,
+      AppRateLimitCount: headers.get('x-app-rate-limit-count')||BaseApi.DEFAULT_RATE_LIMIT_VALUE,
+      MethodRateLimit: headers.get('x-method-rate-limit')||BaseApi.DEFAULT_RATE_LIMIT_VALUE,
+      MethodRatelimitCount: headers.get('x-method-rate-limit-count')||BaseApi.DEFAULT_RATE_LIMIT_VALUE,
+      RetryAfter: Number(headers.get('retry-after'))||BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER,
+      EdgeTraceId: headers.get('x-riot-edge-trace-id')||BaseApi.DEFAULT_RATE_LIMIT_VALUE
     }
   }
 
@@ -114,74 +120,44 @@ export class BaseApi<Region extends string> {
     return base
   }
 
-  private isRateLimitError (e: any) {
-    if (!e) {
-      return false
+  // Wraps potentially unknown error types into known error types
+  // Wraps also ResponseErrors and FetchErrors into GenericErrors
+  private wrapError (e: any) : RateLimitError | ServiceUnavailable | GenericError {
+    console.debug ("WRAPPING " + e + " " + e.stack)
+    if (e instanceof RateLimitError || e instanceof ServiceUnavailable 
+      || e instanceof GenericError) {
+      return e
     }
-    return e.status === TOO_MANY_REQUESTS || e.response?.status === TOO_MANY_REQUESTS
+    console.debug("GETTINGRATELIMIT " + JSON.stringify(e))
+    // e.response may be undefined (FetchError during .fetch(), etc.)
+    // ..so we create a new Headers() with default values for use in the GenericError constructor
+    // NOTE XXX This is bad because it will give default rate limits at times when none are provided
+    // ..and thus may force a wrong error response behaviour
+    const rateLimits = e.headers ? 
+      BaseApi.getRateLimits(e.headers):
+      BaseApi.getRateLimits(new Headers())
+    if (e.status === TOO_MANY_REQUESTS) {
+      return new RateLimitError(rateLimits)
+    }
+    if (e.status === SERVICE_UNAVAILABLE) {
+      return new ServiceUnavailable(rateLimits, e)
+    }
+    return new GenericError(rateLimits, e)
   }
 
-  private isServiceUnavailableError (e: any) {
-    if (!e) {
-      return false
-    }
-    return e.status === SERVICE_UNAVAILABLE || e.response?.status === SERVICE_UNAVAILABLE
-  }
-
-  private getError (e: any) {
-    const headers = this.getRateLimits(_.get(e, 'response.headers'))
-    if (this.isRateLimitError(e)) {
-      return new RateLimitError(headers)
-    }
-    if (this.isServiceUnavailableError(e)) {
-      return new ServiceUnavailable(headers, e)
-    }
-    // Otherwise generic error
-    return new GenericError(headers, e)
-  }
-
-  private internalRequest<T> (options: AxiosRequestConfig): Promise<T> {
-    return RequestBase.request<T>(options)
-  }
-
-  private async retryRateLimit<T> (region: Region | RegionGroups, endpoint: IEndpoint, params?: IParams, e?: any): Promise<ApiResponseDTO<T>> {
-    const baseError = this.getError(e)
-    const isRateLimitError = this.isRateLimitError(e) || this.isServiceUnavailableError(e)
-    if (!this.rateLimitRetry || !isRateLimitError || this.rateLimitRetryAttempts < 1) {
-      throw baseError
-    }
-    const forceError = true
-    for (let i = 0; i <= this.rateLimitRetryAttempts; i++) {
-      try {
-        const response = await this.request<T>(region, endpoint, params, forceError)
-        return response
-      } catch (error) {
-        const parseError = this.getError(error)
-        // Isn't rate limit error
-        if (!this.isRateLimitError(error) && !this.isServiceUnavailableError(error)) {
-          throw parseError
-        }
-        // Set a new attemp
-        const {
-          rateLimits: {
-            RetryAfter
-          }
-        } = parseError
-        const waitSeconds =
-          this.isServiceUnavailableError(e) ?
-            BaseConstants.SERVICE_UNAVAILABLE :
-            BaseConstants.RATE_LIMIT
-        const msToWait = ((RetryAfter || 0) * 1000) + (waitSeconds * 1000 * Math.random())
-        // Log
-        if (this.debug.logRatelimits) {
-          Logger.rateLimit(endpoint, msToWait)
-        }
-        // Wait
-        await waiter(msToWait)
-      }
-    }
-    // Throw rate limit
-    throw baseError
+  // Retrieves an response from an URL, expecting a JSON response
+  // Handles HTTP non-ok error requests as well as JSON parsing
+  // Throws FetchError (can't get an answer from the endpoint) from RequestBase.request/.internalRequest
+  // or ResponseError (bad response from the endpoint : HTTP not ok, invalid response format...)
+  public internalRequest (options: FetchRequestConfig): Promise<Response> {
+    return RequestBase.request(options)
+      .catch((e)=>{
+        if (e instanceof FetchError || e instanceof ResponseError)
+          throw e
+        console.debug("MESSAGE="+e.message)
+        // Wrap any other unknown error into a FetchError
+        throw new FetchError("Request failed", e)
+      })
   }
 
   protected getParam (): IBaseApiParams {
@@ -195,20 +171,22 @@ export class BaseApi<Region extends string> {
     }
   }
 
+  // Tries to retrieve an object from Riot public API servers using the configured API key
+  // Retries according to the retry attempt configuration, API rate limiting configuration and API feedback
+  // Throws RateLimitError, ServiceUnavailable, ApiKeyNotFound, 
+  // or GenericError (wrapping FetchError, ResponseError or other error appropriately)
   protected async request<T> (region: Region | RegionGroups, endpoint: IEndpoint, params?: IParams, forceError?: boolean, queryParams?: any): Promise<ApiResponseDTO<T>> {
     if (!this.key) {
       throw new ApiKeyNotFound()
     }
-    // Url params
     params = params || {}
     params.region = region.toLowerCase()
-    // Format
     const url = this.getApiUrl(endpoint, params)
-    // Logger
+
     if (this.debug.logTime) {
       Logger.start(endpoint, url)
     }
-    const options: AxiosRequestConfig = {
+    const options: FetchRequestConfig = {
       url,
       method: 'GET',
       headers: {
@@ -216,25 +194,91 @@ export class BaseApi<Region extends string> {
       },
       params: queryParams
     }
-    if (this.debug.logUrls) {
-      Logger.uri(options, endpoint)
+
+    let attemptsLeft = this.rateLimitRetryAttempts;
+    let result:ApiResponseDTO<T>|undefined = undefined;
+    let lastAttemptError = undefined;
+    let rateLimits: RateLimitDto|undefined;
+    while (result === undefined && attemptsLeft > 0) {
+      try {
+        if (this.debug.logUrls) {
+          Logger.uri(options, endpoint)
+        }
+        result = await this.internalRequest(options)
+          .then (async fetchResponse => {
+            rateLimits = BaseApi.getRateLimits(fetchResponse.headers);
+            // Throw the appropriate exceptions if the status requires additional retries
+            if (fetchResponse.status === SERVICE_UNAVAILABLE) {
+              throw new ServiceUnavailable(
+                rateLimits, 
+                new ResponseError("Request failed with status code " + SERVICE_UNAVAILABLE, 
+                  fetchResponse.status, 
+                  fetchResponse.text().catch(), 
+                  fetchResponse.headers
+                )
+              )
+            }
+            if (fetchResponse.status === TOO_MANY_REQUESTS) {
+              throw new RateLimitError(rateLimits)
+            }
+            return {
+              rateLimits:rateLimits, 
+              response:await fetchResponse.json() as T
+            }
+          })
+          // NOTE Trace 
+          .catch(e => {
+            console.debug("INTERNAL_REQUEST " + e + " : " + e.message)
+            throw e
+          })
+      }
+      catch (internalRequestError : any) {
+        console.debug('INTERNAL_ERROR ' + internalRequestError + " : " + internalRequestError.message)
+        lastAttemptError = internalRequestError
+        if (forceError || 
+          (internalRequestError.status !== TOO_MANY_REQUESTS && internalRequestError.status !== SERVICE_UNAVAILABLE)) {
+          throw this.wrapError(internalRequestError)
+        }
+      }
+      // Successful request
+      if (result !== undefined) {
+        if (this.debug.logTime) {
+          Logger.end(endpoint, url)
+        }
+        return result
+      }
+      else {
+        if (!this.rateLimitRetry) {
+          if (rateLimits === undefined) {
+            // Something went wrong in internalRequest before rate limits were even made available
+            throw this.wrapError(lastAttemptError)
+          }
+          else {
+            throw new RateLimitError (rateLimits)
+          }
+        }
+        // Set a new attempt
+        if (attemptsLeft > 0) {
+          console.debug('NEW_ATTEMPT')
+          attemptsLeft --;
+          const waitSeconds =
+            lastAttemptError.status === SERVICE_UNAVAILABLE ?
+              BaseConstants.SERVICE_UNAVAILABLE :
+              BaseConstants.RATE_LIMIT
+          const rl = (rateLimits === undefined)? BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER : rateLimits.RetryAfter ??= BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER
+          const msToWait = (rl * 1000) + (waitSeconds * 1000 * Math.random())
+          if (this.debug.logRatelimits) {
+            Logger.rateLimit(endpoint, msToWait)
+          }
+          await waiter(msToWait)
+        }
+      }
     }
-    try {
-      const apiResponse = await this.internalRequest<AxiosResponse<T>>(options)
-      const { data, headers } = apiResponse
-      return {
-        rateLimits: this.getRateLimits(headers),
-        response: data
-      }
-    } catch (e) {
-      if (forceError) {
-        throw e
-      }
-      return await this.retryRateLimit<T>(region, endpoint, params, e)
-    } finally {
-      if (this.debug.logTime) {
-        Logger.end(endpoint, url)
-      }
-    }
+    // Throw an exception because no result has been retrieved after the retries
+    throw this.wrapError(
+      lastAttemptError ? 
+        lastAttemptError : 
+        new Error(this.rateLimitRetryAttempts + " request attempts done, no result could be retrieved. ")
+    )
   }
 }
