@@ -1,4 +1,4 @@
-import * as httpStatusCode from 'http-status-codes'
+import { INTERNAL_SERVER_ERROR, NOT_FOUND } from '../../../src/errors/response.error'
 import { ThirdPartyCode } from '../../../src/apis/lol/thirdPartyCode/thirdPartyCode'
 import { Regions } from '../../../src/constants'
 
@@ -27,7 +27,7 @@ describe('Third Party code', () => {
     // Mock error 500
     request.mockImplementation(() => {
       const error: any = new Error()
-      error.statusCode = httpStatusCode.INTERNAL_SERVER_ERROR
+      error.statusCode = INTERNAL_SERVER_ERROR
       throw error
     })
     const api = new ThirdPartyCode()
@@ -39,7 +39,7 @@ describe('Third Party code', () => {
     // Mock error 404
     request.mockImplementation(() => {
       const error: any = new Error()
-      error.statusCode = httpStatusCode.NOT_FOUND
+      error.statusCode = NOT_FOUND
       throw error
     })
     const api = new ThirdPartyCode()

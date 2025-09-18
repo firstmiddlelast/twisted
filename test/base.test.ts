@@ -4,7 +4,7 @@ const { BaseApi } = require('../src/base/base')
 const { getUrlFromOptions } = require('../src/base/base.utils')
 const { ApiKeyNotFound, RateLimitError, ServiceUnavailable } = require('../src/errors')
 import { ResponseError } from '../src/errors/response.error'
-import { SERVICE_UNAVAILABLE, TOO_MANY_REQUESTS } from 'http-status-codes';
+import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from '../src/errors/response.error';
 
 describe('Base api', () => {
   const riot = new BaseApi({ key: '' })
@@ -113,11 +113,11 @@ describe('Base api', () => {
 
   const testData = "testData"
   const testHeaders = new Headers()
-  const fakeGoodResponse = new Response(JSON.stringify(testData), {headers:testHeaders});
+  const fakeGoodResponse = new Response(JSON.stringify(testData), { headers: testHeaders });
 
   describe('Service unavailable response', () => {
     it('should return valid response at 2nd attempt', async () => {
-      const api: any = new BaseApi({key:key, rateLimitRetryAttempts:2})
+      const api: any = new BaseApi({ key: key, rateLimitRetryAttempts: 2 })
       api.internalRequest = jest.fn()
         .mockImplementationOnce(() => {
           throw new ResponseError("Nope.", SERVICE_UNAVAILABLE, undefined, testHeaders)
@@ -128,7 +128,7 @@ describe('Base api', () => {
     })
 
     it('should throw service unavailable error at 3rd attempt', async () => {
-      const api = new BaseApi({key:key, rateLimitRetryAttempts:3})
+      const api = new BaseApi({ key: key, rateLimitRetryAttempts: 3 })
       api.internalRequest = jest.fn()
         .mockImplementation(() => {
           throw new ResponseError("Nope.", SERVICE_UNAVAILABLE, undefined, testHeaders)
@@ -144,7 +144,7 @@ describe('Base api', () => {
 
   describe('Rate limit response', () => {
     it('should return valid response at 2nd attempt', async () => {
-      const api = new BaseApi({key:key, rateLimitRetryAttempts:1})
+      const api = new BaseApi({ key: key, rateLimitRetryAttempts: 1 })
       api.internalRequest = jest.fn()
         .mockImplementationOnce(() => {
           throw new ResponseError("Nope.", TOO_MANY_REQUESTS, undefined, testHeaders)
@@ -155,7 +155,7 @@ describe('Base api', () => {
     })
 
     it('should throw rate limit error at 3rd attempt', async () => {
-      const api = new BaseApi({key:key, rateLimitRetryAttempts:2})
+      const api = new BaseApi({ key: key, rateLimitRetryAttempts: 2 })
       api.internalRequest = jest.fn()
         .mockImplementation(() => {
           throw new ResponseError("Nope.", TOO_MANY_REQUESTS, undefined, testHeaders)

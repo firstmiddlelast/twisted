@@ -1,4 +1,4 @@
-import httpStatus from 'http-status-codes'
+import { NOT_FOUND, FORBIDDEN } from '../../../src/errors/response.error'
 import { SpectatorApi } from '../../../src/apis/lol/spectator/spectator'
 import { Regions } from '../../../src/constants'
 
@@ -19,7 +19,7 @@ describe('Spectator API', () => {
     it('Should return error message if dont exists an active game', async () => {
       request.mockImplementation(() => {
         const error: any = new Error()
-        error.statusCode = httpStatus.NOT_FOUND
+        error.statusCode = NOT_FOUND
         throw error
       })
       const api = new SpectatorApi()
@@ -29,7 +29,7 @@ describe('Spectator API', () => {
     it('Should throw error with another status code errors', (done) => {
       request.mockImplementation(() => {
         const error: any = new Error()
-        error.statusCode = httpStatus.FORBIDDEN
+        error.statusCode = FORBIDDEN
         throw error
       })
       const api = new SpectatorApi()
