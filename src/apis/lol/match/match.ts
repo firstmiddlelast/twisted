@@ -15,7 +15,7 @@ import { NOT_FOUND } from '../../../errors/response.error'
  */
 export class MatchApi extends BaseApiLol {
   // Private methods
-  private generateResponse (error: GenericError): ApiResponseDTO<MatchListingDto> {
+  private generateResponse(error: GenericError): ApiResponseDTO<MatchListingDto> {
     return {
       rateLimits: error.rateLimits,
       response: {
@@ -26,7 +26,7 @@ export class MatchApi extends BaseApiLol {
       }
     }
   }
-  private map (match: ApiResponseDTO<MatchDto>) {
+  private map(match: ApiResponseDTO<MatchDto>) {
     match.response.teams = match.response.teams.map((team: MatchTeamsDto) => {
       team.win = String(team.win) === 'Win'
       return team
@@ -40,7 +40,7 @@ export class MatchApi extends BaseApiLol {
    * @param region
    * @deprecated
    */
-  public async get (matchId: number, region: Regions) {
+  public async get(matchId: number, region: Regions) {
     const params = {
       matchId
     }
@@ -53,14 +53,14 @@ export class MatchApi extends BaseApiLol {
    * @param region
    * @deprecated
    */
-  public async list (encryptedAccountId: string, region: Regions, query?: MatchQueryDTO) {
+  public async list(encryptedAccountId: string, region: Regions, query?: MatchQueryDTO) {
     const params = {
       encryptedAccountId
     }
     try {
       return await this.request<MatchListingDto>(region, endpointsV4.MatchListing, params, false, query)
     } catch (e) {
-      if (typeof e === 'object' && e !== null && 'status' in e && e.status !== NOT_FOUND) {
+      if (typeof e === 'object' && e !== null && 'status' in e && (e as any).status !== NOT_FOUND) {
         throw e
       }
       return this.generateResponse(e as GenericError)
@@ -73,7 +73,7 @@ export class MatchApi extends BaseApiLol {
    * @param region
    * @deprecated
    */
-  public async timeline (matchId: number, region: Regions) {
+  public async timeline(matchId: number, region: Regions) {
     const params = {
       matchId
     }
