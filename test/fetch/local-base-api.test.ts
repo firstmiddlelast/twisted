@@ -1,5 +1,5 @@
 import { GenericError, RateLimitError, ServiceUnavailable } from '../../src/errors';
-import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from 'http-status-codes';
+import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from '../../src/errors/response.error';
 import {LolStatusContentDTO} from "../../src/models-dto/status/status-v4"
 import { BaseApi } from '../../src/base/base';
 import { IEndpoint } from '../../src/endpoints';

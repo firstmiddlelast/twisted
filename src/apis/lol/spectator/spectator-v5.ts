@@ -1,15 +1,15 @@
-import { StatusCodes } from 'http-status-codes'
 import { Regions } from '../../../constants'
 import { FeaturedGamesDTO } from '../../../models-dto/spectator/featured-games.dto'
 import { endpointsV5 } from '../../../endpoints/endpoints'
 import { CurrentGameInfoDTO } from '../../../models-dto/spectator/current-game-info.dto'
 import { SpectatorNotAvailableDTO } from '../../../models-dto/spectator/spectator-not-available.dto'
 import { BaseApiLol } from '../base/base.api.lol'
+import { NOT_FOUND } from '../../../errors/response.error'
 
 export class SpectatorV5Api extends BaseApiLol {
    private errorHandler(e: any) {
       const { statusCode } = e.error || e
-      if (statusCode !== StatusCodes.NOT_FOUND) {
+      if (statusCode !== NOT_FOUND) {
          throw e
       }
    }

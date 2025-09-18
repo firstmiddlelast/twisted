@@ -1,10 +1,10 @@
-import PromiseQueue from 'promise-queue'
 import { FetchRequestConfig } from './fetch-request-config'
 import { FetchError } from '../errors/fetch.error';
 import { ResponseError } from '../errors/response.error';
 
 export class RequestBase {
-  static queue: PromiseQueue
+  private static pending: Set<Promise<Response>> = new Set()
+  private static concurrency:number = Infinity
 
   // Throws FetchError if something goes wrong when awaited
   private static async sendRequest (options: FetchRequestConfig): Promise<Response> {
@@ -82,19 +82,22 @@ export class RequestBase {
       })
   }
 
-  private static getQueue () {
-    if (!RequestBase.queue) {
-      RequestBase.queue = new PromiseQueue(Infinity, Infinity)
-    }
-    return RequestBase.queue
-  }
-
   static setConcurrency (concurrency: number) {
-    RequestBase.queue = new PromiseQueue(concurrency, Infinity)
+    RequestBase.concurrency = concurrency
   }
 
-  // Throws FetchError if something goes wrong when awaited
   static request (options: FetchRequestConfig): Promise<Response> {
-    return RequestBase.getQueue().add(() => RequestBase.sendRequest(options))
+    if (RequestBase.pending.size < RequestBase.concurrency) {
+      const promise = RequestBase.sendRequest(options)
+        .finally(()=>{
+          RequestBase.pending.delete(promise)
+        })
+      RequestBase.pending.add(promise)
+      return promise
+    }
+    else {
+      return Promise.race(RequestBase.pending)
+        .then(()=>RequestBase.request(options))
+    }
   }
 }

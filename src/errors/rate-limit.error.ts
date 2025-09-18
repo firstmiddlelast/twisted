@@ -1,5 +1,5 @@
 import { IErrors } from '.'
-import { TOO_MANY_REQUESTS } from 'http-status-codes'
+import { TOO_MANY_REQUESTS } from './response.error'
 import { RateLimitDto } from '../models-dto/rate-limit/rate-limit.dto'
 
 /**

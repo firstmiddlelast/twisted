@@ -1,9 +1,9 @@
-import { INTERNAL_SERVER_ERROR, NOT_FOUND } from 'http-status-codes'
 import { Regions } from '../../../constants'
 import { endpointsV4 } from '../../../endpoints/endpoints'
 import { ThirdPartyCodeDTO } from '../../../models-dto/third-party-code/third-party-code.dto'
 import { ApiResponseDTO } from '../../../models-dto/api-response/api-response'
 import { BaseApiLol } from '../base/base.api.lol'
+import { NOT_FOUND, INTERNAL_SERVER_ERROR } from '../../../errors/response.error'
 
 /**
  * Third party methods

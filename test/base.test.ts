@@ -114,7 +114,7 @@ describe('Base api', () => {
   const testData = "testData"
   const testHeaders = new Headers()
   const fakeGoodResponse = new Response(JSON.stringify(testData), {headers:testHeaders});
-if(false)
+
   describe('Service unavailable response', () => {
     it('should return valid response at 2nd attempt', async () => {
       const api: any = new BaseApi({key:key, rateLimitRetryAttempts:2})

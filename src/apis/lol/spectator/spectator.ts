@@ -1,10 +1,10 @@
-import { NOT_FOUND } from 'http-status-codes'
 import { Regions } from '../../../constants'
 import { FeaturedGamesDTO } from '../../../models-dto/spectator/featured-games.dto'
 import { endpointsV4 } from '../../../endpoints/endpoints'
 import { CurrentGameInfoDTO } from '../../../models-dto/spectator/current-game-info.dto'
 import { SpectatorNotAvailableDTO } from '../../../models-dto/spectator/spectator-not-available.dto'
 import { BaseApiLol } from '../base/base.api.lol'
+import { NOT_FOUND } from '../../../errors/response.error'
 
 /**
  * @deprecated Use SpectatorV5Api instead

@@ -1,4 +1,3 @@
-import qs from 'querystring'
 import { FetchRequestConfig } from './fetch-request-config'
 
 export interface IParams {
@@ -58,8 +57,7 @@ export function waiter (ms: number) {
 export function getUrlFromOptions (options: FetchRequestConfig): string {
   let uri = options.url as string
   if (options.params) {
-    uri += '?'
-    uri += qs.stringify(options.params)
+    uri += '?'+ new URLSearchParams(options.params)
   }
   return uri
 }

@@ -189,28 +189,44 @@ Object.entries(Champions).forEach(
  * Fetching champion IDs from CommunityDragon's PBE content. See https://www.communitydragon.org/
  */
 const CD_CHAMPIONS = 'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-summary.json'
-if (process.env.UPDATE_CHAMPION_IDS) {
-  const updateChampionIDs = () => {
-    fetch(CD_CHAMPIONS)
-      .then(response => response.json())
-      .then(cdChamps => {
-        cdChamps.forEach(({ id, alias }: {id: number, alias: string}) => {
-          const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
-          if (!championIdMap[id]) {
-            championIdMap[id] = championIdMap[id] || championAlias
-            championIdMap[championAlias] = championIdMap[championAlias] || '' + id
-          }
-        })
-      })
-      .catch(e => {
-        console.warn('Updating champion IDs failed : ' + e)
-      })
-    }
 
-  // Schedule once every day.
-  setInterval(updateChampionIDs, 1000 * 60 * 60 * 24)
-  updateChampionIDs()
+export let UPDATE_CHAMPION_IDS = false;
+export const updateChampionIDs = () => {
+  return fetch(CD_CHAMPIONS)
+    .then(response => response.json())
+    .then(cdChamps => {
+      cdChamps.forEach(({ id, alias }: {id: number, alias: string}) => {
+        const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
+        if (!championIdMap[id]) {
+          championIdMap[id] = championIdMap[id] || championAlias
+          championIdMap[championAlias] = championIdMap[championAlias] || '' + id
+        }
+      })
+    })
+    .catch(e => {
+      console.warn('Updating champion IDs failed : ' + e)
+    })
 }
+
+let championUpdateInterval:any = undefined
+
+export const startChampionUpdates = () => {
+  if (!championUpdateInterval) {
+    const updatePromise = updateChampionIDs()
+    // Schedule once every day.
+    championUpdateInterval = setInterval(updateChampionIDs, 1000 * 60 * 60 * 24)
+    return updatePromise;
+  }
+  else {
+    return Promise.resolve()
+  }
+}
+
+export const stopChampionUpdates = () => {
+  if (championUpdateInterval) clearInterval(championUpdateInterval)
+}
+
+if (UPDATE_CHAMPION_IDS) startChampionUpdates();
 
 /**
  * Get champion name by id

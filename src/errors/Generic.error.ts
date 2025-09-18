@@ -1,6 +1,6 @@
 import { IErrors } from '.'
 import { RateLimitDto } from '../models-dto/rate-limit/rate-limit.dto'
-import HttpStatusCodes from 'http-status-codes'
+import { INTERNAL_SERVER_ERROR } from '../../src/errors/response.error';
 import { FetchError } from './fetch.error'
 import { ResponseError } from './response.error'
 
@@ -17,7 +17,7 @@ export class GenericError extends Error implements IErrors {
   // which could be wrong (if the network is down for instance). 
   // Probably a non-existent HttpStatusCodes code should have been used instead, but changing it 
   // may impact client libraries that rely on it so I'm not touching it.
-  public static readonly UNDEFINED_STATUS: number = HttpStatusCodes.INTERNAL_SERVER_ERROR
+  public static readonly UNDEFINED_STATUS: number = INTERNAL_SERVER_ERROR
 
   constructor(rateLimits: RateLimitDto, e: FetchError | ResponseError) {
     super(e.message || message)

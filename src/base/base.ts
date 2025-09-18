@@ -2,8 +2,7 @@ import { FetchRequestConfig } from './fetch-request-config'
 import { ResponseError } from '../errors/response.error'
 import { ApiKeyNotFound } from '../errors'
 import { IEndpoint } from '../endpoints'
-import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from 'http-status-codes'
-import { config } from 'dotenv'
+import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from '../../src/errors/response.error';
 import { ApiResponseDTO } from '../models-dto/api-response/api-response'
 import { RateLimitDto } from '../models-dto/rate-limit/rate-limit.dto'
 import { GenericError } from '../errors/Generic.error'
@@ -15,8 +14,6 @@ import { Logger } from './logger.base'
 import { RequestBase } from './request.base'
 import { RegionGroups } from '../constants'
 import { FetchError } from '../errors/fetch.error'
-
-config()
 
 export class BaseApi<Region extends string> {
   protected readonly game: BaseApiGames = BaseApiGames.LOL
@@ -39,7 +36,6 @@ export class BaseApi<Region extends string> {
    */
   constructor (key: string)
   constructor (param?: string | IBaseApiParams) {
-    this.key = process.env.RIOT_API_KEY || ''
     if (typeof param === 'string') {
       this.key = param
     } else if (param) {

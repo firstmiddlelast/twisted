@@ -1,9 +1,9 @@
-import { NOT_FOUND } from 'http-status-codes'
 import { RegionGroups } from '../../../constants'
 import { endpointsV5 } from '../../../endpoints/endpoints'
 import { MatchV5DTOs, MatchV5TimelineDTOs } from '../../../models-dto/matches/match-v5'
 import { MatchQueryV5DTO } from '../../../models-dto/matches/query-v5'
 import { BaseApiLol } from '../base/base.api.lol'
+import { NOT_FOUND } from '../../../errors/response.error'
 
 /**
  * Match methods
