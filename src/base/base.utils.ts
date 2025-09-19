@@ -1,9 +1,3 @@
-import { FetchRequestConfig } from './fetch-request-config'
-
-export interface IParams {
-  [key: string]: string | number
-}
-
 export interface IBaseApiParams {
   /**
    * If api response is 429 (rate limits) try reattempt after needed time (default true)
@@ -46,18 +40,10 @@ export interface IBaseApiParams {
   }
 }
 
-export function waiter (ms: number) {
+export function waiter(ms: number) {
   return new Promise<void>((resolve) => {
     setTimeout(() => {
       resolve()
     }, ms)
   })
-}
-
-export function getUrlFromOptions (options: FetchRequestConfig): string {
-  let uri = options.url as string
-  if (options.params) {
-    uri += '?'+ new URLSearchParams(options.params)
-  }
-  return uri
 }

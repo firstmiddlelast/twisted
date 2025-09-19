@@ -1,20 +1,21 @@
-import { FetchRequestConfig } from './fetch-request-config'
 import { FetchError } from '../errors/fetch.error';
 import { ResponseError } from '../errors/response.error';
 
 export class RequestBase {
   private static pending: Set<Promise<Response>> = new Set()
-  private static concurrency:number = Infinity
+  private static concurrency: number = Infinity
 
+  // Actually sends a request with all parameters
   // Throws FetchError if something goes wrong when awaited
-  private static async sendRequest (options: FetchRequestConfig): Promise<Response> {
-    const { url, method, headers, data, params } = options;
+  private static async sendRequest(request: Request): Promise<Response> {
+    //const { url, method, headers, data, params } = options;
+    /*
+    let finalUrl = options.url;
     const fetchOptions: RequestInit = {
-      method,
-      headers,
+      method: request.method,
+      headers: request.headers,
     };
 
-    let finalUrl = url;
     if (params) {
       const query = new URLSearchParams(params).toString();
       finalUrl = `${url}?${query}`;
@@ -27,7 +28,8 @@ export class RequestBase {
       }
       (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
     }
-    
+    */
+
     // NOTE : from https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API : 
     // The fetch() method takes one mandatory argument, the path to the resource you want to fetch. 
     // It returns a Promise that resolves to the Response to that request — as soon as the server responds with headers — 
@@ -65,15 +67,15 @@ export class RequestBase {
     The contents of status, message, and status_code are not guaranteed to always exist or remain constant for a given response code. 
     Logic within your application should fail gracefully based the response code alone, and should not rely on the response body.
     */
-    return fetch(finalUrl, fetchOptions)
-      .catch((e)=>{
+    return fetch(request/*, fetchOptions*/)
+      .catch((e) => {
         throw new FetchError("Fetch failed", e)
       })
       .then(async fetchResponse => {
         if (!fetchResponse.ok) {
           throw new ResponseError(
-            "Request failed with status code " + fetchResponse.status, 
-            fetchResponse.status, 
+            "Request failed with status code " + fetchResponse.status,
+            fetchResponse.status,
             await fetchResponse.text().catch(),
             fetchResponse.headers
           )
@@ -82,14 +84,15 @@ export class RequestBase {
       })
   }
 
-  static setConcurrency (concurrency: number) {
+  static setConcurrency(concurrency: number) {
     RequestBase.concurrency = concurrency
   }
 
-  static request (options: FetchRequestConfig): Promise<Response> {
+  // Manages request concurrency
+  static request(request: Request): Promise<Response> {
     if (RequestBase.pending.size < RequestBase.concurrency) {
-      const promise = RequestBase.sendRequest(options)
-        .finally(()=>{
+      const promise = RequestBase.sendRequest(request)
+        .finally(() => {
           RequestBase.pending.delete(promise)
         })
       RequestBase.pending.add(promise)
@@ -97,7 +100,7 @@ export class RequestBase {
     }
     else {
       return Promise.race(RequestBase.pending)
-        .then(()=>RequestBase.request(options))
+        .then(() => RequestBase.request(request))
     }
   }
 }

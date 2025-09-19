@@ -7,6 +7,8 @@ export enum BaseConstants {
   BASE_URL = "https://$(region).api.riotgames.com/:game",
 }
 
+export const BASE_URL_PARAM_REPLACEMENT_REGEXP = /\$\(([^)]+)?\)/g
+
 export enum BaseApiGames {
   LOL = 'lol',
   TFT = 'tft',

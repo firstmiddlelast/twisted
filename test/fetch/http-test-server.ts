@@ -7,7 +7,8 @@ const PORT = 8080;
 let requestCounter = 0;
 
 const server = http.createServer((req, res) => {
-  const path = new URL(req.url!, `http://localhost:${PORT}`).pathname;
+  const url = new URL(req.url!, `http://localhost:${PORT}`);
+  const path = url.pathname;
   console.log('http request path : ' + path)
   const apiData: LolStatusContentDTO = { content: "ok", locale: "en-US" }
 
@@ -28,6 +29,15 @@ const server = http.createServer((req, res) => {
     case path.endsWith("/status"):
       res.writeHead(200, { 'Content-Type': 'application/json', 'x-app-rate-limit': 'no-limit' });
       res.end(JSON.stringify({ locale: "en_GB", content: "Account Transfers Unavailable" } as LolStatusContentDTO));
+      break;
+    case path.endsWith("/echo"):
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        headers: req!.headers,
+        reqUrl: req!.url,
+        search: url.search,
+        searchParams: url.searchParams
+      }))
       break;
     case path.includes("/delay/"):
       const delayMs = parseInt(path.substring(path.indexOf('/delay')).split('/')[2]);
