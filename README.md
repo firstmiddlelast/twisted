@@ -1,3 +1,7 @@
+# Twisted-Fetch (Fork)
+
+> **Note:** This is a fork of the original `twisted` library. The primary goal of this fork is to replace the `axios` dependency with the native `fetch` API to improve browser/Deno compatibility and reduce bundle size. The original README is preserved below for general reference.
+
 # Twisted
 League of Legends API Wrapper <br>
 ![https://www.npmjs.com/package/twisted](https://nodei.co/npm/twisted.png)
