@@ -13,11 +13,11 @@ describe('Champions Update from CommunityDragon', () => {
       getChampionName(-1);
       fail("There shoud be no champion for id -1");
     }
-    catch(e) {}
-    await startChampionUpdates().then(()=>{
-        stopChampionUpdates()
-        expect(getChampionName(-1)).toBe("NONE")
-      }
+    catch (e) { }
+    await startChampionUpdates().then(() => {
+      stopChampionUpdates()
+      expect(getChampionName(-1)).toBe("NONE")
+    }
     )
 
     // We cannot easily test for a *new* champion as we don't know when one will be added.

@@ -180,9 +180,9 @@ interface Dictionary<T> {
   [index: string]: T;
 }
 
-const championIdMap : Dictionary<string> = {};
+const championIdMap: Dictionary<string> = {};
 Object.entries(Champions).forEach(
-  ([key, value]) => {if (typeof value === 'number') championIdMap[value]=key}
+  ([key, value]) => { if (typeof value === 'number') championIdMap[value] = key }
 )
 
 /**
@@ -195,7 +195,7 @@ export const updateChampionIDs = () => {
   return fetch(CD_CHAMPIONS)
     .then(response => response.json())
     .then(cdChamps => {
-      cdChamps.forEach(({ id, alias }: {id: number, alias: string}) => {
+      cdChamps.forEach(({ id, alias }: { id: number, alias: string }) => {
         const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
         if (!championIdMap[id]) {
           championIdMap[id] = championIdMap[id] || championAlias
@@ -204,11 +204,11 @@ export const updateChampionIDs = () => {
       })
     })
     .catch(e => {
-      console.warn('Updating champion IDs failed : ' + e)
+      console.warn('Updating champion IDs failed : ' + e + " : " + e.stack)
     })
 }
 
-let championUpdateInterval:any = undefined
+let championUpdateInterval: any = undefined
 
 export const startChampionUpdates = () => {
   if (!championUpdateInterval) {
@@ -231,7 +231,7 @@ if (UPDATE_CHAMPION_IDS) startChampionUpdates();
 /**
  * Get champion name by id
  */
-export function getChampionName (champ: number): string {
+export function getChampionName(champ: number): string {
   const result = championIdMap[champ]
   if (!result) {
     throw new Error(`Invalid champ id ${champ}`)
@@ -242,9 +242,9 @@ export function getChampionName (champ: number): string {
 /**
  * Get champion and by id and return capitalize string
  */
-export function getChampionNameCapital (champ: number | string): string {
+export function getChampionNameCapital(champ: number | string): string {
   let name = typeof champ === 'number' ? getChampionName(champ) : champ
-  name = name.match(/[a-zA-Z]+/g)!.map(name=>name.toLowerCase().charAt(0).toUpperCase() + name.toLowerCase().substring(1)).join("")
+  name = name.match(/[a-zA-Z]+/g)!.map(name => name.toLowerCase().charAt(0).toUpperCase() + name.toLowerCase().substring(1)).join("")
   switch (name) {
     case 'Reksai':
       return 'RekSai'
