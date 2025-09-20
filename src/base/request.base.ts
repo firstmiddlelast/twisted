@@ -69,12 +69,12 @@ export class RequestBase {
     */
     return fetch(request/*, fetchOptions*/)
       .catch((e) => {
-        throw new FetchError("Fetch failed", e)
+        throw new FetchError("Fetching " + request.url + " failed. Request : " + JSON.stringify(request), e)
       })
       .then(async fetchResponse => {
         if (!fetchResponse.ok) {
           throw new ResponseError(
-            "Request failed with status code " + fetchResponse.status,
+            "Requesting " + request.url + " failed with status code " + fetchResponse.status,
             fetchResponse.status,
             await fetchResponse.text().catch(),
             fetchResponse.headers

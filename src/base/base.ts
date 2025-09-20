@@ -158,7 +158,7 @@ export class BaseApi<Region extends string> {
   // or GenericError (wrapping FetchError, ResponseError, TypeError or other error appropriately)
   // TODO FIXME : pourquoi queryParams n'est-il jamais utilisé? 
   protected async request<T>(region: Region | RegionGroups, endpoint: IEndpoint,
-    searchParams?: object | URLSearchParams, forceError?: boolean/*, queryParams?: any*/): Promise<ApiResponseDTO<T>> {
+    params?: object | URLSearchParams/*, forceError?: boolean*//*, queryParams?: any*/): Promise<ApiResponseDTO<T>> {
     if (!this.key) {
       throw new ApiKeyNotFound()
     }
@@ -167,30 +167,59 @@ export class BaseApi<Region extends string> {
     try {
       let urlString: string
       let requestParams: URLSearchParams;
-      if (searchParams instanceof URLSearchParams) {
-        requestParams = searchParams
+      if (params instanceof URLSearchParams) {
+        requestParams = params
       }
       else {
-        requestParams = new URLSearchParams(Object.entries(searchParams ??= {}))
+        // Flatten array values in the search query parameters
+        // {single:value, multiple:[value1, value2]}
+        //  becomes 
+        // [["value", value], ["multiple", value1], ["multiple", value2]]
+        // ..and later in the URI : 
+        // ?value=value&multiple=value1&multiple=value2
+        // ..instead of something like this if we didn't flatten the values : 
+        // ?value=value&multiple=value1%2Cvalue2
+        const flattenedSearchParams =
+          Object.entries(params ??= {})
+            .map(([name, value]) => {
+              if (Array.isArray(value)) {
+                const valuesArray = value.map((arrayVal) => [name, arrayVal]);
+                return valuesArray
+              }
+              else return [[name, value]]
+            }).flat();
+        console.debug('PARAMS', JSON.stringify(flattenedSearchParams))
+        requestParams = new URLSearchParams(flattenedSearchParams)
       }
-      console.log('REQUEST_PARAMS=' + requestParams)
+      console.debug('REQUEST_PARAMS', requestParams)
       urlString = `${this.baseUrl}/${endpoint.prefix}/v${endpoint.version}/${endpoint.path}`
-      urlString
-        .replace('region', region.toLocaleLowerCase())
+      console.debug('URLSTRING', urlString)
+      const substitutedString = urlString
+        .replace("$(region)", region.toLocaleLowerCase())
         .replace(':game', this.game)
         .replace(BASE_URL_PARAM_REPLACEMENT_REGEXP, (match) => {
-          if (requestParams.get(match[1]) === null)
-            throw new TypeError("Can not complete URL " + urlString + " substitution because of null parameter " + match[1])
+          const matchedParamName = match.substring(2, match.length - 1)
+          if (requestParams.get(matchedParamName) === null) {
+            throw new TypeError("Can not complete URL substitution in " + urlString
+              + " because of null parameter " + matchedParamName + ". Request parameters : " + requestParams)
+          }
           // Once a parameter has been used for substitution, it should not appear in the query
           // TODO XXX CHECK IF THE ABOVE IS TRUE, 
           // i.e. if no parameter used in the api has the same name as the parameters used for substitution
           // (i.e. region, )
-          //  requestParams.delete(match[1]) Temporarily disabled
-          return requestParams.get(match[1])!
-        })
-
-      url = new URL(urlString)
+          const paramValue = requestParams.get(matchedParamName)!
+          requestParams.delete(matchedParamName)
+          return paramValue
+        }
+        )
+      if (substitutedString.match(BASE_URL_PARAM_REPLACEMENT_REGEXP) !== null) {
+        throw new TypeError("All substitutions could not be completed in " + urlString
+          + ". Missing parameters : " + substitutedString.match(BASE_URL_PARAM_REPLACEMENT_REGEXP)?.join()
+          + ". Request parameters : " + requestParams)
+      }
+      url = new URL(substitutedString)
       url.search = requestParams.toString()
+      console.debug('URLSTRING_PARAMS', url.toString())
       request = new Request(url.toString(), { headers: this.keyHeader, method: 'GET' });
     }
     catch (e: any) {
@@ -202,11 +231,10 @@ export class BaseApi<Region extends string> {
         throw e
       }
     }
-
+    console.debug('START', url.toString())
     if (this.debug.logTime) {
       Logger.start(endpoint, url.toString())
     }
-    console.log('URL=' + url)
     // "+1" on the line below because the first attempt does not count as a _REtry_ 
     // and it's _REtries_ that are specified in the parameters
     let attemptsLeft = this.rateLimitRetryAttempts + 1;
@@ -250,10 +278,9 @@ export class BaseApi<Region extends string> {
           })
       }
       catch (internalRequestError: any) {
-        console.debug('INTERNAL_ERROR (force=' + forceError + ")s (" + internalRequestError.status + ")" + internalRequestError)
+        console.debug("INTERNAL_ERROR (status=" + internalRequestError.status + ")" + internalRequestError)
         lastAttemptError = internalRequestError
-        if (forceError ||
-          (internalRequestError.status !== TOO_MANY_REQUESTS && internalRequestError.status !== SERVICE_UNAVAILABLE)) {
+        if ((internalRequestError.status !== TOO_MANY_REQUESTS && internalRequestError.status !== SERVICE_UNAVAILABLE)) {
           throw this.wrapError(lastAttemptError)
         }
       }

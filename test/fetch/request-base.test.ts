@@ -33,7 +33,7 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
     const startTime = Date.now();
     const requests = [];
     for (let i = 0; i < numRequests; i++) {
-      requests.push(RequestBase.request({ url: "http://localhost:8080/delay/" + delay, method: "GET" }));
+      requests.push(RequestBase.request(new Request("http://localhost:8080/delay/" + delay)));
     }
     await Promise.all(requests);
     const endTime = Date.now();
@@ -53,7 +53,7 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
     const startTime = Date.now();
     const requests = [];
     for (let i = 0; i < numRequests; i++) {
-      requests.push(RequestBase.request({ url: "http://localhost:8080/delay/" + delay, method: 'GET' }));
+      requests.push(RequestBase.request(new Request("http://localhost:8080/delay/" + delay)));
     }
     await Promise.all(requests);
     const duration = Date.now() - startTime;
@@ -62,20 +62,12 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
   });
 
   it('200 OK response', async () => {
-    const options = {
-      url: 'http://localhost:8080/200',
-      method: 'GET',
-    };
-    await RequestBase.request(options);
+    await RequestBase.request(new Request('http://localhost:8080/200'));
   });
 
   it('404 Not Found response', async () => {
-    const options = {
-      url: 'http://localhost:8080/404',
-      method: 'GET',
-    };
     try {
-      await RequestBase.request(options);
+      await RequestBase.request(new Request('http://localhost:8080/404'));
       fail('Should have thrown an error');
     } catch (e) {
       expect(e).toBeInstanceOf(ResponseError);
@@ -85,12 +77,8 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
   });
 
   it('429 Too Many Requests response', async () => {
-    const options = {
-      url: 'http://localhost:8080/429',
-      method: 'GET',
-    };
     try {
-      await RequestBase.request(options);
+      await RequestBase.request(new Request('http://localhost:8080/429'));
       fail('Should have thrown an error');
     }
     catch (e) {
@@ -101,12 +89,8 @@ describe('RequestBase Concurrency and HTTP Behavior', () => {
   });
 
   it('503 Service Unavailable response', async () => {
-    const options = {
-      url: 'http://localhost:8080/503',
-      method: 'GET',
-    };
     try {
-      await RequestBase.request(options);
+      await RequestBase.request(new Request('http://localhost:8080/503'));
       fail('Should have thrown an error');
     }
     catch (e) {

@@ -11,7 +11,7 @@ export class MatchTFTApi extends BaseApiTft {
    * @param matchId
    * @param region
    */
-  public async get (matchId: string, region: RegionGroups) {
+  public async get(matchId: string, region: RegionGroups) {
     const params = {
       matchId
     }
@@ -23,17 +23,17 @@ export class MatchTFTApi extends BaseApiTft {
    * @param summonerPUUID
    * @param region
    */
-  public async list (summonerPUUID: string, region: RegionGroups, query?: MatchTFTQueryDTO) {
+  public async list(summonerPUUID: string, region: RegionGroups, query?: MatchTFTQueryDTO) {
     const params = {
       summonerPUUID
     }
-    return this.request<string[]>(region, endpointsTFTV1.MatchListing, params, false, query)
+    return this.request<string[]>(region, endpointsTFTV1.MatchListing, { ...params, ...query })
   }
 
   /**
    * Get match listing (with details)
    */
-  public async listWithDetails (summonerPUUID: string, region: RegionGroups, query?: MatchTFTQueryDTO) {
+  public async listWithDetails(summonerPUUID: string, region: RegionGroups, query?: MatchTFTQueryDTO) {
     const response: MatchTFTDTO[] = []
     // Match list
     const {

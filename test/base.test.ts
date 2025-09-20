@@ -1,18 +1,12 @@
 import { BaseConstants } from './../src/base/base.const';
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { BaseApi } = require('../src/base/base')
-const { getUrlFromOptions } = require('../src/base/base.utils')
 const { ApiKeyNotFound, RateLimitError, ServiceUnavailable } = require('../src/errors')
 import { ResponseError } from '../src/errors/response.error'
 import { TOO_MANY_REQUESTS, SERVICE_UNAVAILABLE } from '../src/errors/response.error';
 
 describe('Base api', () => {
   const riot = new BaseApi({ key: '' })
-  const baseEndpoint = {
-    path: '',
-    version: 0,
-    prefix: ''
-  }
   const region = 'LA1'
   const key = 'apikey'
 
@@ -73,47 +67,8 @@ describe('Base api', () => {
     })
   })
 
-  describe('Utils', () => {
-    it('base api should have a region variable', () => {
-      expect(riot.baseUrl.indexOf('$(region)')).toBeGreaterThan(-1)
-    })
-
-    it('should return correct api url', () => {
-      const params = {
-        region: region
-      }
-      const path = 'ryze'
-      baseEndpoint.path = path
-      const url = riot.getApiUrl(baseEndpoint, params)
-      expect(url.endsWith(path)).toEqual(true)
-    })
-
-    it('should return correct api url with api params', () => {
-      const params = {
-        region: region,
-        division: 'wood'
-      }
-      baseEndpoint.path = 'ryze/$(division)'
-      const ends = 'ryze/wood'
-      const url = riot.getApiUrl(baseEndpoint, params)
-      expect(url.endsWith(ends)).toEqual(true)
-    })
-
-    it('should return correct url with query params', () => {
-      const baseUrl = 'https://na.api.riotgames.com/lol/match/v4/matchlists/by-account/xxx'
-      const options = {
-        url: baseUrl,
-        params: { queue: [420, 430], beginIndex: 0, endIndex: 10 }
-      }
-      const url = getUrlFromOptions(options)
-      const exp = `${baseUrl}?queue=420&queue=430&beginIndex=0&endIndex=10`
-      expect(url).toEqual(exp)
-    })
-  })
-
   const testData = "testData"
   const testHeaders = new Headers()
-  const fakeGoodResponse = new Response(JSON.stringify(testData), { headers: testHeaders });
 
   describe('Service unavailable response', () => {
     it('should return valid response at 2nd attempt', async () => {
@@ -122,7 +77,7 @@ describe('Base api', () => {
         .mockImplementationOnce(() => {
           throw new ResponseError("Nope.", SERVICE_UNAVAILABLE, undefined, testHeaders)
         })
-        .mockImplementationOnce(() => Promise.resolve(fakeGoodResponse))
+        .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(testData), { headers: testHeaders })))
       const response = await api.request('KR', {})
       expect(response.response).toEqual(testData)
     })
@@ -149,7 +104,7 @@ describe('Base api', () => {
         .mockImplementationOnce(() => {
           throw new ResponseError("Nope.", TOO_MANY_REQUESTS, undefined, testHeaders)
         })
-        .mockImplementationOnce(() => Promise.resolve(fakeGoodResponse))
+        .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(testData), { headers: testHeaders })))
       const response = await api.request('KR', {})
       expect(response.response).toEqual(testData)
     })

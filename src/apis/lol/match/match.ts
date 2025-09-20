@@ -58,7 +58,7 @@ export class MatchApi extends BaseApiLol {
       encryptedAccountId
     }
     try {
-      return await this.request<MatchListingDto>(region, endpointsV4.MatchListing, params, false, query)
+      return await this.request<MatchListingDto>(region, endpointsV4.MatchListing, { ...params, ...query })
     } catch (e) {
       if (typeof e === 'object' && e !== null && 'status' in e && (e as any).status !== NOT_FOUND) {
         throw e

@@ -12,7 +12,7 @@ export class LeagueTFTApi extends BaseApiTft {
    * @param encryptedSummonerId
    * @param region
    */
-  public async get (encryptedSummonerId: string, region: Regions) {
+  public async get(encryptedSummonerId: string, region: Regions) {
     const params = {
       encryptedSummonerId
     }
@@ -23,7 +23,7 @@ export class LeagueTFTApi extends BaseApiTft {
    * @param puuid
    * @param region
    */
-  public async getByPUUID (puuid: string, region: Regions) {
+  public async getByPUUID(puuid: string, region: Regions) {
     const params = {
       puuid
     }
@@ -33,21 +33,21 @@ export class LeagueTFTApi extends BaseApiTft {
    * Get the master league
    * @param region
    */
-  public async getMasterLeague (region: Regions) {
+  public async getMasterLeague(region: Regions) {
     return this.request<LeagueListDTO>(region, endpointsTFTV1.LeagueMaster)
   }
   /**
    * Get the grandmaster league
    * @param region
    */
-  public async getGrandMasterLeague (region: Regions) {
+  public async getGrandMasterLeague(region: Regions) {
     return this.request<LeagueListDTO>(region, endpointsTFTV1.LeagueGrandMaster)
   }
   /**
    * Get the challenger league
    * @param region
    */
-  public async getChallengerLeague (region: Regions) {
+  public async getChallengerLeague(region: Regions) {
     return this.request<LeagueListDTO>(region, endpointsTFTV1.LeagueChallenger)
   }
   /**
@@ -58,7 +58,7 @@ export class LeagueTFTApi extends BaseApiTft {
    * @param page defaults to 1
    * @param queue defaults to RANKED_TFT
    */
-  public async getByTierDivision (
+  public async getByTierDivision(
     region: Regions,
     tier: Tiers,
     division: Divisions,
@@ -72,9 +72,7 @@ export class LeagueTFTApi extends BaseApiTft {
     return this.request<LeagueEntryDTO[]>(
       region,
       endpointsTFTV1.LeagueByTierDivision,
-      params,
-      false,
-      { queue, page }
+      { ...params, queue, page }
     )
   }
 }

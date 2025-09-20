@@ -14,7 +14,7 @@ export class MatchV5Api extends BaseApiLol {
    * @param matchId Match id
    * @param region
    */
-  public async get (matchId: string, region: RegionGroups) {
+  public async get(matchId: string, region: RegionGroups) {
     const params = {
       matchId
     }
@@ -26,22 +26,22 @@ export class MatchV5Api extends BaseApiLol {
    * @param region
    * @returns A list of match ids
    */
-  public async list (puuid: string, region: RegionGroups, query?: MatchQueryV5DTO) {
+  public async list(puuid: string, region: RegionGroups, query?: MatchQueryV5DTO) {
     const params = {
       summonerPUUID: puuid
     }
     try {
-      return await this.request<string[]>(region, endpointsV5.MatchListing, params, false, query)
-    } catch (e:any) {
+      return await this.request<string[]>(region, endpointsV5.MatchListing, { ...params, ...query })
+    } catch (e: any) {
       // NOTE There is probably a logic here for returning an empty list of matches instead of letting
       // the exception bubble, and some applications may rely on it, so I'm not changing it, but it is
       // a bad idea because it will compromise retrieved data integrity in case of api access error
       // (some match lists will be flagged as "retrieved successfully and empty" instead of "should be retried later")
       if (
-        (typeof e === 'object' && e !== null 
+        (typeof e === 'object' && e !== null
           && 'status' in e && e.status !== NOT_FOUND)
-          || e.rateLimits === undefined
-        ) {
+        || e.rateLimits === undefined
+      ) {
         throw e
       }
       return {
@@ -51,7 +51,7 @@ export class MatchV5Api extends BaseApiLol {
     }
   }
 
-  public async timeline (matchId: string, region: RegionGroups) {
+  public async timeline(matchId: string, region: RegionGroups) {
     const params = {
       matchId
     }
