@@ -1,4 +1,4 @@
-import { RegionGroups, Regions, regionToRegionGroup } from '.'
+import { RegionGroups, Regions, regionToRegionGroup } from './regions'
 
 describe('Regions', () => {
   describe('regionToRegionGroup', () => {

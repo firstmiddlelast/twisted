@@ -1,4 +1,4 @@
-import { IErrors } from '.'
+import { IErrors } from './base'
 import { SERVICE_UNAVAILABLE } from './response.error'
 import { RateLimitDto } from '../models-dto/rate-limit/rate-limit.dto'
 

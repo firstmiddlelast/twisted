@@ -1,5 +1,5 @@
 import { NOT_IMPLEMENTED } from './response.error'
-import { IErrors } from '.'
+import { IErrors } from './base'
 
 const message = 'Api key not found'
 

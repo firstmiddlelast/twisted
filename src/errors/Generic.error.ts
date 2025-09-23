@@ -1,4 +1,4 @@
-import { IErrors } from '.'
+import { IErrors } from './base'
 import { RateLimitDto } from '../models-dto/rate-limit/rate-limit.dto'
 import { INTERNAL_SERVER_ERROR } from '../../src/errors/response.error';
 import { FetchError } from './fetch.error'
