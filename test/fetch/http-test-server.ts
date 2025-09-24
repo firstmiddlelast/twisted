@@ -15,7 +15,11 @@ const server = http.createServer((req, res) => {
   const requestId = requestCounter++;
   switch (true) {
     case path.endsWith("/429"):
-      res.writeHead(TOO_MANY_REQUESTS, { 'Content-Type': 'text/plain', 'x-app-rate-limit': 'none' });
+      res.writeHead(TOO_MANY_REQUESTS, {
+        'Content-Type': 'text/plain',
+        'x-app-rate-limit': 'none',
+        'retry-after': url.searchParams.get('retry-after') || '0'
+      });
       res.end("Too Many Requests");
       break;
     case path.endsWith("/503"):

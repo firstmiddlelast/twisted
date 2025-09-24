@@ -28,13 +28,7 @@ export class BaseApi<Region extends string> {
   }
   private readonly keyHeader: Headers;
 
-  constructor()
-  constructor(params: IBaseApiParams)
-  /**
-   * Base api
-   * @param key Riot games api key
-   */
-  constructor(key: string)
+  // If param is a string, it's a Riot Games API key. 
   constructor(param?: string | IBaseApiParams) {
     if (typeof param === 'string') {
       this.key = param
@@ -183,8 +177,7 @@ export class BaseApi<Region extends string> {
           Object.entries(params ??= {})
             .map(([name, value]) => {
               if (Array.isArray(value)) {
-                const valuesArray = value.map((arrayVal) => [name, arrayVal]);
-                return valuesArray
+                return value.map((arrayVal) => [name, arrayVal]);
               }
               else return [[name, value]]
             }).flat();
@@ -204,6 +197,7 @@ export class BaseApi<Region extends string> {
               + " because of null parameter " + matchedParamName + ". Request parameters : " + requestParams)
           }
           // Once a parameter has been used for substitution, it should not appear in the query
+          // ..so we remove it from the requested params
           // TODO XXX CHECK IF THE ABOVE IS TRUE, 
           // i.e. if no parameter used in the api has the same name as the parameters used for substitution
           // (i.e. region, )
@@ -240,21 +234,22 @@ export class BaseApi<Region extends string> {
     let attemptsLeft = this.rateLimitRetryAttempts + 1;
     let result: ApiResponseDTO<T> | undefined = undefined;
     let lastAttemptError = undefined;
-    let rateLimits: RateLimitDto | undefined;
+    let responseRateLimits: RateLimitDto | undefined;
     while (result === undefined && attemptsLeft > 0) {
       try {
         if (this.debug.logUrls) {
           Logger.uri(request, endpoint)
         }
+        responseRateLimits = undefined;
         console.debug('RETRYING...')
         result = await this.internalRequest(request)
           .then(async fetchResponse => {
             console.debug('FETCH RESPONSE : ' + JSON.stringify(fetchResponse))
-            rateLimits = BaseApi.getRateLimits(fetchResponse.headers);
+            responseRateLimits = BaseApi.getRateLimits(fetchResponse.headers);
             // Throw the appropriate exceptions if the status requires additional retries
             if (fetchResponse.status === SERVICE_UNAVAILABLE) {
               throw new ServiceUnavailable(
-                rateLimits,
+                responseRateLimits,
                 new ResponseError("Request failed with status code " + SERVICE_UNAVAILABLE,
                   fetchResponse.status,
                   await fetchResponse.text().catch(),
@@ -263,28 +258,27 @@ export class BaseApi<Region extends string> {
               )
             }
             if (fetchResponse.status === TOO_MANY_REQUESTS) {
-              throw new RateLimitError(rateLimits, "Too many requests (response status : " + TOO_MANY_REQUESTS + ")")
+              throw new RateLimitError(responseRateLimits, "Too many requests (response status : " + TOO_MANY_REQUESTS + ")")
             }
             console.debug('FETCHING OBJECT')
             return {
-              rateLimits: rateLimits,
+              rateLimits: responseRateLimits,
               response: await fetchResponse.json() as T
             }
-          })
-          // NOTE Trace 
-          .catch(e => {
-            console.debug("INTERNAL_REQUEST " + e + " : " + e.message)
-            throw e
           })
       }
       catch (internalRequestError: any) {
         console.debug("INTERNAL_ERROR (status=" + internalRequestError.status + ")" + internalRequestError)
         lastAttemptError = internalRequestError
+        // Set up for retries if we had a response from the API
+        if (internalRequestError instanceof ResponseError) {
+          responseRateLimits = BaseApi.getRateLimits((internalRequestError as ResponseError).headers)
+        }
         if ((internalRequestError.status !== TOO_MANY_REQUESTS && internalRequestError.status !== SERVICE_UNAVAILABLE)) {
           throw this.wrapError(lastAttemptError)
         }
       }
-      // Successful request return here
+      // Successful request return
       if (result !== undefined) {
         if (this.debug.logTime) {
           Logger.end(endpoint, url.toString())
@@ -293,28 +287,31 @@ export class BaseApi<Region extends string> {
       }
       else {
         if (!this.rateLimitRetry) {
-          if (rateLimits === undefined) {
+          if (responseRateLimits === undefined) {
             // Something went wrong in internalRequest before rate limits were even made available
             throw this.wrapError(lastAttemptError)
           }
           else {
-            throw new RateLimitError(rateLimits, "No result retrieved. Retrying would be possible according to the HTTP response but is not allowed by configuration")
+            throw new RateLimitError(responseRateLimits, "No result retrieved. Retrying would be possible according to the HTTP response but is not allowed by configuration.")
           }
         }
         // Set a new attempt
         if (attemptsLeft > 0) {
-          console.debug('WAITING..')
           attemptsLeft--;
-          const waitSeconds =
-            lastAttemptError.status === SERVICE_UNAVAILABLE ?
-              BaseConstants.SERVICE_UNAVAILABLE :
-              BaseConstants.RATE_LIMIT
-          const rl = (rateLimits === undefined) ? BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER : rateLimits.RetryAfter ??= BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER
-          const msToWait = (rl * 1000) + (waitSeconds * 1000 * Math.random())
+          const delay = lastAttemptError.status === SERVICE_UNAVAILABLE ?
+            BaseConstants.SERVICE_UNAVAILABLE_DELAY :
+            BaseConstants.RATE_LIMIT_DELAY
+          console.debug('RATE_LIMIT:' + responseRateLimits ? JSON.stringify(responseRateLimits) : 'undefined')
+          const retryDelay = (responseRateLimits === undefined) ?
+            BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER :
+            responseRateLimits.RetryAfter ??= BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER
+          const msDelay = (retryDelay * 1000) + (delay * 1000 * Math.random())
           if (this.debug.logRatelimits) {
-            Logger.rateLimit(endpoint, msToWait)
+            Logger.rateLimit(endpoint, msDelay)
           }
-          await waiter(msToWait)
+          console.debug('RESPONSE_DELAY:' + responseRateLimits?.RetryAfter)
+          console.debug('WAITING ' + msDelay + ' ms..')
+          await waiter(msDelay)
           console.debug('..DONE WAITING')
         }
       }
@@ -322,7 +319,7 @@ export class BaseApi<Region extends string> {
     console.debug('ALL_ATTEMPTS_FAILED : ' + lastAttemptError.stack)
     const finalError = this.wrapError(lastAttemptError)
     console.debug('WRAPPED : ' + lastAttemptError.stack)
-    finalError.message = "All " + this.rateLimitRetryAttempts + " retry attemps failed. " + finalError.message
+    finalError.message = "All " + this.rateLimitRetryAttempts + " retry attempts failed. " + finalError.message
     //if (finalError !== lastAttemptError) finalError.message += " Last error : " + lastAttemptError.message
     throw finalError
   }

@@ -17,7 +17,7 @@ class LocalBaseApi<T extends string> extends BaseApi<T> {
 let localApi: LocalBaseApi<string>;
 const key = 'testKey';
 const region = 'localhost';
-const urlParams = { division: 'woods' }
+const requestTestParams = { division: 'woods' }
 
 describe('BaseApi request HTTP Error Handling', () => {
   let serverProcess: any;
@@ -59,11 +59,11 @@ describe('BaseApi request HTTP Error Handling', () => {
       // This test is a "dirty" port of the 'should return correct url with query params' test in base.test.ts
       // ...which tests things out of typescript type safety
       let endpoint = { path: 'echo', version: 1, prefix: 'lol' };
-      const params = { ...urlParams, "param": 1 }
+      const params = { ...requestTestParams, "param": 1 }
       let apiResponse = await localApi.request<ApiResponseDTO<string>>(region, endpoint, params);
       expect(apiResponse.response.search).toBe("?param=1")
       endpoint = { path: 'echo', version: 1, prefix: 'lol' };
-      const arrayParams = { ...urlParams, "param": [1, 2], queue: [420, 430], beginIndex: 0, endIndex: 10 }
+      const arrayParams = { ...requestTestParams, "param": [1, 2], queue: [420, 430], beginIndex: 0, endIndex: 10 }
       apiResponse = await localApi.request<ApiResponseDTO<string>>(region, endpoint, arrayParams);
       expect(apiResponse.response.search).toBe("?param=1&param=2&queue=420&queue=430&beginIndex=0&endIndex=10")
 
@@ -77,7 +77,7 @@ describe('BaseApi request HTTP Error Handling', () => {
     //  -the response is correctly typed and fields available - testing only AppRa
     it('status OK HTTP response content', async () => {
       const endpointStatus: IEndpoint = { path: 'status', version: 1, prefix: 'lol' };
-      const apiResponse = await localApi.request<ApiResponseDTO<LolStatusContentDTO>>(region, endpointStatus, urlParams)
+      const apiResponse = await localApi.request<ApiResponseDTO<LolStatusContentDTO>>(region, endpointStatus, requestTestParams)
       expect(apiResponse.response.locale).toBe("en_GB")
       expect(apiResponse.response.content).toBe("Account Transfers Unavailable")
       expect(apiResponse.rateLimits?.AppRateLimit).toBe('no-limit')
@@ -88,7 +88,7 @@ describe('BaseApi request HTTP Error Handling', () => {
     it('404 Not Found HTTP response', async () => {
       const endpoint404 = { path: '404', version: 1, prefix: 'lol' };
       try {
-        await localApi.request(region, endpoint404, urlParams);
+        await localApi.request(region, endpoint404, requestTestParams);
         fail('Should have thrown an error');
       }
       catch (e) {
@@ -104,7 +104,7 @@ describe('BaseApi request HTTP Error Handling', () => {
     it('429 Too Many Requests HTTP response', async () => {
       const endpoint429 = { path: String(TOO_MANY_REQUESTS), version: 1, prefix: 'lol' };
       try {
-        await localApi.request(region, endpoint429, urlParams);
+        await localApi.request(region, endpoint429, requestTestParams);
         fail('Should have thrown an error');
       }
       catch (e) {
@@ -119,10 +119,39 @@ describe('BaseApi request HTTP Error Handling', () => {
       }
     });
 
+    it('429 Retry attempt delays', async () => {
+      const retryAttempts = 2
+      const delay = 2
+      const endpoint429 = { path: String(TOO_MANY_REQUESTS), version: 1, prefix: 'lol' };
+      const retryingApi = new LocalBaseApi({
+        key,
+        baseURL: 'http://$(region):8080/$(division)',
+        debug: { logUrls: true },
+        rateLimitRetryAttempts: retryAttempts
+      });
+      const firstAttemptTime = new Date().getTime()
+      try {
+        await retryingApi.request(region, endpoint429, { ...requestTestParams, 'retry-after': delay });
+        fail('Should have thrown an error');
+      }
+      catch (e) {
+        expect(e).toBeInstanceOf(RateLimitError);
+        const rle = e as RateLimitError;
+        expect(rle.status).toBe(TOO_MANY_REQUESTS);
+        // Checks the local test server has sent back the delay that was requested in the URL request parameters
+        expect(rle.rateLimits.RetryAfter).toBe(delay);
+        // Checks the attempts have been done (and failed since we request the 429 endpoint) 
+        // after having internally waited for the server specified delay times the parametrized api retries
+        const errorTime = new Date().getTime();
+        // Check the API waited before making new attempts
+        expect(errorTime - firstAttemptTime).toBeGreaterThan(retryAttempts * delay * 1000)
+      }
+    });
+
     it('503 Service Unavailable HTTP response', async () => {
       const endpoint503 = { path: String(SERVICE_UNAVAILABLE), version: 1, prefix: 'lol' }
       try {
-        await localApi.request(region, endpoint503, urlParams);
+        await localApi.request(region, endpoint503, requestTestParams);
         fail('Should have thrown an error');
       }
       catch (e) {
