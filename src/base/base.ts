@@ -241,7 +241,8 @@ export class BaseApi<Region extends string> {
           Logger.uri(request, endpoint)
         }
         responseRateLimits = undefined;
-        console.debug('RETRYING...')
+        if (lastAttemptError === undefined) console.debug('TRYING...')
+        else console.debug('RETRYING...')
         result = await this.internalRequest(request)
           .then(async fetchResponse => {
             console.debug('FETCH RESPONSE : ' + JSON.stringify(fetchResponse))
