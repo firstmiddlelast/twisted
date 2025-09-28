@@ -92,13 +92,10 @@ export class BaseApi<Region extends string> {
   // errors are wrapped in RateLimiErrors and ServiceUnavailable according to status when appropriate
   // ResponseErrors and FetchErrors and any other errors are wrapped into GenericErrors
   private wrapError(e: any): RateLimitError | ServiceUnavailable | GenericError {
-    console.debug("WRAPPING " + e.stack)
     if (e instanceof RateLimitError || e instanceof ServiceUnavailable
       || e instanceof GenericError) {
-      console.debug('WRAPRETURNING')
       return e
     }
-    console.debug("GETTINGRATELIMIT ")
     // e.headers may be undefined (FetchError during .fetch(), etc.)
     // ..so we create a new Headers() with default values for use in the GenericError constructor
     // NOTE XXX This is bad because it will give default rate limits at times when none are provided
@@ -106,16 +103,12 @@ export class BaseApi<Region extends string> {
     const rateLimits = (e.headers !== undefined) ?
       BaseApi.getRateLimits(e.headers) :
       BaseApi.getRateLimits(new Headers())
-    console.debug("GOTRATELIMIT ")
     if (e.status === TOO_MANY_REQUESTS) {
-      console.debug('GOING RATELIMIT')
       return new RateLimitError(rateLimits, "Too many request : " + e.message, e)
     }
     if (e.status === SERVICE_UNAVAILABLE) {
-      console.debug('GOING SERVICE')
       return new ServiceUnavailable(rateLimits, e)
     }
-    console.debug('GOING GENERIC')
     return new GenericError(rateLimits, e)
   }
 
@@ -128,7 +121,6 @@ export class BaseApi<Region extends string> {
       .catch((e) => {
         if (e instanceof FetchError || e instanceof ResponseError)
           throw e
-        console.debug("MESSAGE=" + e.message)
         // Wrap any other unknown error into a FetchError
         throw new FetchError("Request failed", e)
       })
@@ -181,12 +173,9 @@ export class BaseApi<Region extends string> {
               }
               else return [[name, value]]
             }).flat();
-        console.debug('PARAMS', JSON.stringify(flattenedSearchParams))
         requestParams = new URLSearchParams(flattenedSearchParams)
       }
-      console.debug('REQUEST_PARAMS', requestParams)
       urlString = `${this.baseUrl}/${endpoint.prefix}/v${endpoint.version}/${endpoint.path}`
-      console.debug('URLSTRING', urlString)
       const substitutedString = urlString
         .replace("$(region)", region.toLocaleLowerCase())
         .replace(':game', this.game)
@@ -213,7 +202,6 @@ export class BaseApi<Region extends string> {
       }
       url = new URL(substitutedString)
       url.search = requestParams.toString()
-      console.debug('URLSTRING_PARAMS', url.toString())
       request = new Request(url.toString(), { headers: this.keyHeader, method: 'GET' });
     }
     catch (e: any) {
@@ -225,7 +213,6 @@ export class BaseApi<Region extends string> {
         throw e
       }
     }
-    console.debug('START', url.toString())
     if (this.debug.logTime) {
       Logger.start(endpoint, url.toString())
     }
@@ -241,11 +228,8 @@ export class BaseApi<Region extends string> {
           Logger.uri(request, endpoint)
         }
         responseRateLimits = undefined;
-        if (lastAttemptError === undefined) console.debug('TRYING...')
-        else console.debug('RETRYING...')
         result = await this.internalRequest(request)
           .then(async fetchResponse => {
-            console.debug('FETCH RESPONSE : ' + JSON.stringify(fetchResponse))
             responseRateLimits = BaseApi.getRateLimits(fetchResponse.headers);
             // Throw the appropriate exceptions if the status requires additional retries
             if (fetchResponse.status === SERVICE_UNAVAILABLE) {
@@ -261,7 +245,6 @@ export class BaseApi<Region extends string> {
             if (fetchResponse.status === TOO_MANY_REQUESTS) {
               throw new RateLimitError(responseRateLimits, "Too many requests (response status : " + TOO_MANY_REQUESTS + ")")
             }
-            console.debug('FETCHING OBJECT')
             return {
               rateLimits: responseRateLimits,
               response: await fetchResponse.json() as T
@@ -269,7 +252,6 @@ export class BaseApi<Region extends string> {
           })
       }
       catch (internalRequestError: any) {
-        console.debug("INTERNAL_ERROR (status=" + internalRequestError.status + ")" + internalRequestError)
         lastAttemptError = internalRequestError
         // Set up for retries if we had a response from the API
         if (internalRequestError instanceof ResponseError) {
@@ -302,7 +284,6 @@ export class BaseApi<Region extends string> {
           const delay = lastAttemptError.status === SERVICE_UNAVAILABLE ?
             BaseConstants.SERVICE_UNAVAILABLE_DELAY :
             BaseConstants.RATE_LIMIT_DELAY
-          console.debug('RATE_LIMIT:' + responseRateLimits ? JSON.stringify(responseRateLimits) : 'undefined')
           const retryDelay = (responseRateLimits === undefined) ?
             BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER :
             responseRateLimits.RetryAfter ??= BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER
@@ -310,16 +291,11 @@ export class BaseApi<Region extends string> {
           if (this.debug.logRatelimits) {
             Logger.rateLimit(endpoint, msDelay)
           }
-          console.debug('RESPONSE_DELAY:' + responseRateLimits?.RetryAfter)
-          console.debug('WAITING ' + msDelay + ' ms..')
           await waiter(msDelay)
-          console.debug('..DONE WAITING')
         }
       }
     }
-    console.debug('ALL_ATTEMPTS_FAILED : ' + lastAttemptError.stack)
     const finalError = this.wrapError(lastAttemptError)
-    console.debug('WRAPPED : ' + lastAttemptError.stack)
     finalError.message = "All " + this.rateLimitRetryAttempts + " retry attempts failed. " + finalError.message
     //if (finalError !== lastAttemptError) finalError.message += " Last error : " + lastAttemptError.message
     throw finalError

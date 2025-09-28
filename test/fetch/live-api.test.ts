@@ -45,19 +45,14 @@ describe('Use the live API with an actual API key', () => {
     expect(e).toBeInstanceOf(GenericError);
     const ge = e as GenericError;
     expect(ge.name).toBe(GenericError.name);
-    console.debug("GENERIC_ERROR_STACK " + ge.stack)
     expect(ge.status).toBe(401);
-    console.debug('errortruthy')
     expect(ge.error).toBeTruthy();
-    console.debug('bodytruthy' + ge.body)
     expect(ge.body).toBeTruthy();
-    console.debug('bodyrate' + ge.rateLimits)
     expect(ge.rateLimits).toBeTruthy();
     expect(ge.rateLimits?.RetryAfter).toBeFalsy();
-    // console.debug ("WRONG KEY EXCEPTION : " + e + JSON.stringify(e))
-    // WRONG KEY EXCEPTION : GenericError: Request failed with status code 401
-    // below is the previously received AxiosError description. 
-    const expected = {
+    //     // WRONG KEY EXCEPTION : GenericError: Request failed with status code 401
+    // below is the previously received AxiosError description, for reference
+    const previousAxiosError = {
       "name": "GenericError",
       "status": 401,
       "body": {
@@ -92,25 +87,19 @@ describe('Use the live API with an actual API key', () => {
   })
 
   it('Get live lol status - wrong region', async () => {
-    console.debug("UNDICI" + process.versions.undici)
     let status;
     let e;
     try {
-      console.debug('GETSTATUS')
       status = await new LolApi({ key: apiKey, debug: { logUrls: true, logTime: true } }).StatusV4.get("GALAXY" as Regions);
-      console.debug('GOTSTATUS')
     }
     catch (caught) {
       e = caught
     }
     expect(status).toBeUndefined();
-    console.debug("exception catched : " + (e as TypeError).stack + " = " + JSON.stringify(e))
     // Champs récupérés d'AxiosError dans GenericError : 
     // error.message vers .message, 
     // error.response?.status vers .status, 
     // error.response?.data vers .body
-    console.debug(GenericError)
-    console.debug(GenericError.prototype.name)
     expect(e).toBeInstanceOf(GenericError);
     const ge = e as GenericError;
     expect(ge.message).toBeTruthy();
@@ -122,7 +111,6 @@ describe('Use the live API with an actual API key', () => {
     expect(ge.rateLimits?.RetryAfter).toBe(0);
     // L'objet AxiosError est rangé dans le champ GenericError.error
     expect(ge.error).toBeTruthy();
-    //console.debug ("WRONG REGION EXCEPTION : " + JSON.stringify(e))
     // TODO : check error properties (type, message, etc.)
     /* Original message : 
     GenericError: getaddrinfo ENOTFOUND galaxy.api.riotgames.com
