@@ -237,7 +237,7 @@ export class BaseApi<Region extends string> {
                 responseRateLimits,
                 new ResponseError("Request failed with status code " + SERVICE_UNAVAILABLE,
                   fetchResponse.status,
-                  await fetchResponse.text().catch(),
+                  await fetchResponse.text().catch(() => ""),
                   fetchResponse.headers
                 )
               )

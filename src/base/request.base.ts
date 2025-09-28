@@ -76,7 +76,7 @@ export class RequestBase {
           throw new ResponseError(
             "Requesting " + request.url + " failed with status code " + fetchResponse.status,
             fetchResponse.status,
-            await fetchResponse.text().catch(),
+            await fetchResponse.text().catch(() => ""),
             fetchResponse.headers
           )
         }
