@@ -8,27 +8,6 @@ export class RequestBase {
   // Actually sends a request with all parameters
   // Throws FetchError if something goes wrong when awaited
   private static async sendRequest(request: Request): Promise<Response> {
-    //const { url, method, headers, data, params } = options;
-    /*
-    let finalUrl = options.url;
-    const fetchOptions: RequestInit = {
-      method: request.method,
-      headers: request.headers,
-    };
-
-    if (params) {
-      const query = new URLSearchParams(params).toString();
-      finalUrl = `${url}?${query}`;
-    }
-
-    if (data) {
-      fetchOptions.body = JSON.stringify(data);
-      if (!fetchOptions.headers) {
-        fetchOptions.headers = {};
-      }
-      (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
-    }
-    */
 
     // NOTE : from https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API : 
     // The fetch() method takes one mandatory argument, the path to the resource you want to fetch. 

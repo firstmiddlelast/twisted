@@ -213,11 +213,11 @@ export async function updateChampionIDs () {
  */
 export const DAILY_DELAY = 1000 * 60 * 60 * 24;
 
+// Type is any because depending on the runtime environment, either the Node or Dom libraries could be used, 
+// returning either a promise or a number, and we don't want to enforce a Node dependency here. 
 /**
  * If undefined, no auto-update is ongoing. 
  */
-// Type is any because depending on the runtime environment, either the Node or Dom libraries could be used, 
-// returning either a promise or a number, and we don't want to enforce a Node dependency here. 
 export let championUpdateInterval: any = undefined
 
 /**
@@ -225,7 +225,7 @@ export let championUpdateInterval: any = undefined
  * After this call, @see championUpdateInterval is not undefined. 
  * Autoupdates can be stopped using @see stopChampionUpdates
  * Note that passing a value of 0 _does_ start the autoupdate. 
- * This differs from the logic of @UPDATE_CHAMPION_IDS at startup, 
+ * This differs from the logic of @see UPDATE_CHAMPION_IDS at startup, 
  * because an explicit call to this function should probably mean to start updating even with "wrong" parameters.
  * It may be useful to check the returned result to check for the actual value used for the interval. 
  * @param championUpdateDelay if given, the delay in seconds. 
