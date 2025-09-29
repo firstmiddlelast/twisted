@@ -14,7 +14,7 @@ export class MatchV5Api extends BaseApiLol {
    * @param matchId Match id
    * @param region
    */
-  public async get(matchId: string, region: RegionGroups) {
+  public async get (matchId: string, region: RegionGroups) {
     const params = {
       matchId
     }
@@ -26,7 +26,7 @@ export class MatchV5Api extends BaseApiLol {
    * @param region
    * @returns A list of match ids
    */
-  public async list(puuid: string, region: RegionGroups, query?: MatchQueryV5DTO) {
+  public async list (puuid: string, region: RegionGroups, query?: MatchQueryV5DTO) {
     const params = {
       summonerPUUID: puuid
     }
@@ -51,7 +51,7 @@ export class MatchV5Api extends BaseApiLol {
     }
   }
 
-  public async timeline(matchId: string, region: RegionGroups) {
+  public async timeline (matchId: string, region: RegionGroups) {
     const params = {
       matchId
     }

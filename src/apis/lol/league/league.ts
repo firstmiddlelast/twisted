@@ -14,7 +14,7 @@ export class LeagueApi extends BaseApiLol {
    * @param puuid
    * @param region
    */
-  public async byPUUID(puuid: string, region: Regions) {
+  public async byPUUID (puuid: string, region: Regions) {
     const params = {
       summonerPUUID: puuid
     }
@@ -26,7 +26,7 @@ export class LeagueApi extends BaseApiLol {
    * @param encryptedSummonerId Encrypted summoner ID. Max length 63 characters.
    * @param region
    */
-  public async bySummoner(encryptedSummonerId: string, region: Regions) {
+  public async bySummoner (encryptedSummonerId: string, region: Regions) {
     const params = {
       encryptedSummonerId
     }
@@ -40,7 +40,7 @@ export class LeagueApi extends BaseApiLol {
    * @param region
    * @param page defaults to 1
    */
-  public async exp(queue: Queues, tier: Tiers, division: Divisions, region: Regions, page: number = 1) {
+  public async exp (queue: Queues, tier: Tiers, division: Divisions, region: Regions, page: number = 1) {
     const params = {
       queue,
       tier,
@@ -57,7 +57,7 @@ export class LeagueApi extends BaseApiLol {
    * @param region
    * @param page defaults to 1
    */
-  public async entries(queue: Queues, tier: Tiers, division: Divisions, region: Regions, page: number = 1) {
+  public async entries (queue: Queues, tier: Tiers, division: Divisions, region: Regions, page: number = 1) {
     const params = {
       queue,
       tier,
@@ -71,7 +71,7 @@ export class LeagueApi extends BaseApiLol {
    * @param leagueId
    * @param region
    */
-  public async get(leagueId: string, region: Regions) {
+  public async get (leagueId: string, region: Regions) {
     const params = {
       leagueId
     }
@@ -82,7 +82,7 @@ export class LeagueApi extends BaseApiLol {
    * @param queue Note that the queue value must be a valid ranked queue.
    * @param region
    */
-  public async getChallengerLeaguesByQueue(queue: Queues, region: Regions) {
+  public async getChallengerLeaguesByQueue (queue: Queues, region: Regions) {
     const params = {
       queue
     }
@@ -93,7 +93,7 @@ export class LeagueApi extends BaseApiLol {
    * @param queue Note that the queue value must be a valid ranked queue.
    * @param region
    */
-  public async getGrandMasterLeagueByQueue(queue: Queues, region: Regions) {
+  public async getGrandMasterLeagueByQueue (queue: Queues, region: Regions) {
     const params = {
       queue
     }
@@ -104,7 +104,7 @@ export class LeagueApi extends BaseApiLol {
    * @param queue Note that the queue value must be a valid ranked queue.
    * @param region
    */
-  public async getMasterLeagueByQueue(queue: Queues, region: Regions) {
+  public async getMasterLeagueByQueue (queue: Queues, region: Regions) {
     const params = {
       queue
     }
