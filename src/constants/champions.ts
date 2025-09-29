@@ -188,17 +188,17 @@ Object.entries(Champions).forEach(
 /**
  * Fetching champion IDs from CommunityDragon's PBE content. See https://www.communitydragon.org/
  */
-const CD_CHAMPIONS = 'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-summary.json'
+export const CD_CHAMPIONS = 'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/champion-summary.json'
 
-export let UPDATE_CHAMPION_IDS = false;
-export const updateChampionIDs = () => {
+export async function updateChampionIDs () {
   return fetch(CD_CHAMPIONS)
     .then(response => response.json())
     .then(cdChamps => {
       cdChamps.forEach(({ id, alias }: { id: number, alias: string }) => {
         const championAlias = alias.replace(/[a-z][A-Z]/g, letter => letter[0] + '_' + letter[1]).toUpperCase()
         if (!championIdMap[id]) {
-          championIdMap[id] = championIdMap[id] || championAlias
+          console.debug(`Updating champion ${championAlias}=${id}`)
+          championIdMap[id] = championAlias
           championIdMap[championAlias] = championIdMap[championAlias] || '' + id
         }
       })
@@ -208,30 +208,77 @@ export const updateChampionIDs = () => {
     })
 }
 
-let championUpdateInterval: any = undefined
+/**
+ * The default delay, in seconds, between autoupdates. @see UPDATE_CHAMPION_IDS
+ */
+export const DAILY_DELAY = 1000 * 60 * 60 * 24;
 
-export const startChampionUpdates = () => {
-  if (!championUpdateInterval) {
-    const updatePromise = updateChampionIDs()
-    // Schedule once every day.
-    championUpdateInterval = setInterval(updateChampionIDs, 1000 * 60 * 60 * 24)
-    return updatePromise;
-  }
-  else {
-    return Promise.resolve()
+/**
+ * If undefined, no auto-update is ongoing. 
+ */
+// Type is any because depending on the runtime environment, either the Node or Dom libraries could be used, 
+// returning either a promise or a number, and we don't want to enforce a Node dependency here. 
+export let championUpdateInterval: any = undefined
+
+/**
+ * Starts regularly updating the champion list from CDragon @see CD_CHAMPIONS
+ * After this call, @see championUpdateInterval is not undefined. 
+ * Autoupdates can be stopped using @see stopChampionUpdates
+ * Note that passing a value of 0 _does_ start the autoupdate. 
+ * This differs from the logic of @UPDATE_CHAMPION_IDS at startup, 
+ * because an explicit call to this function should probably mean to start updating even with "wrong" parameters.
+ * It may be useful to check the returned result to check for the actual value used for the interval. 
+ * @param championUpdateDelay if given, the delay in seconds. 
+ * If it is undefined or 0, the value of @see UPDATE_CHAMPION_IDS is used. 
+ * If this value is 0, the default value is used : @see DAILY_DELAY
+ * @returns A Promise of the number of seconds that has been used for the interval. 
+ */
+export async function startChampionUpdates (championUpdateDelay?: number) {
+  return updateChampionIDs().then(() => {
+    const refreshInterval = championUpdateDelay ?
+      championUpdateDelay :
+      UPDATE_CHAMPION_IDS ?
+        UPDATE_CHAMPION_IDS :
+        DAILY_DELAY
+    championUpdateInterval = setInterval(
+      updateChampionIDs,
+      refreshInterval * 1000
+    )
+    return refreshInterval
+  })
+}
+
+export function stopChampionUpdates () {
+  if (championUpdateInterval) {
+    clearInterval(championUpdateInterval)
+    championUpdateInterval = undefined;
   }
 }
 
-export const stopChampionUpdates = () => {
-  if (championUpdateInterval) clearInterval(championUpdateInterval)
+/**
+ * The delay at startup (in seconds) between automatic calls to @see updateChampionIDs by @see startChampionUpdates. 
+ * The global env var of the same name, UPDATE_CHAMPION_IDS, is read to set the value of this constant. 
+ * If the env var is not set or empty or set to 0, this constant is set to 0 and no autoupdate is triggered at loading time (but can be manually started using @see startChampionUpdates )
+ * If the env var is set to a number > 0, this number interpreted as the interval between champion 
+ * update attempts in seconds and the autoupdate starts. 
+ * If any other env var value is given (including any non-numeric string like 'true', 'false', 'YES', 'NO', etc.), 
+ * this constant will be set to the default value, @see DAILY_DELAY , and the autoupdate will start using this value. 
+ * 
+ */
+export const UPDATE_CHAMPION_IDS = (globalThis['process'] && globalThis['process']['env'] && globalThis['process']['env']['UPDATE_CHAMPION_IDS']) ?
+  Number.isNaN(Number(globalThis['process']['env']['UPDATE_CHAMPION_IDS'])) ?
+    DAILY_DELAY :
+    Number(globalThis['process']['env']['UPDATE_CHAMPION_IDS']) | 0 * 1000 :
+  0;
+if (UPDATE_CHAMPION_IDS) {
+  console.debug(`Startup : scheduling champion auto-update every ${UPDATE_CHAMPION_IDS}s.`)
+  startChampionUpdates(UPDATE_CHAMPION_IDS);
 }
-
-if (UPDATE_CHAMPION_IDS) startChampionUpdates();
 
 /**
  * Get champion name by id
  */
-export function getChampionName(champ: number): string {
+export function getChampionName (champ: number): string {
   const result = championIdMap[champ]
   if (!result) {
     throw new Error(`Invalid champ id ${champ}`)
@@ -242,7 +289,7 @@ export function getChampionName(champ: number): string {
 /**
  * Get champion and by id and return capitalize string
  */
-export function getChampionNameCapital(champ: number | string): string {
+export function getChampionNameCapital (champ: number | string): string {
   let name = typeof champ === 'number' ? getChampionName(champ) : champ
   name = name.match(/[a-zA-Z]+/g)!.map(name => name.toLowerCase().charAt(0).toUpperCase() + name.toLowerCase().substring(1)).join("")
   switch (name) {
