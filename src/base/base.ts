@@ -42,7 +42,7 @@ export class BaseApi<Region extends string> {
     this.keyHeader.append('X-Riot-Token', this.key)
   }
 
-  private setParams(param: IBaseApiParams) {
+  private setParams (param: IBaseApiParams) {
     if (typeof param.rateLimitRetry !== 'undefined') {
       this.rateLimitRetry = param.rateLimitRetry
     }
@@ -76,7 +76,7 @@ export class BaseApi<Region extends string> {
   public static readonly DEFAULT_RATE_LIMIT_VALUE: string = "";
   public static readonly DEFAULT_RATE_LIMIT_RETRY_AFTER: number = 0;
 
-  public static getRateLimits(headers: Headers): RateLimitDto {
+  public static getRateLimits (headers: Headers): RateLimitDto {
     return {
       Type: headers.get('x-rate-limit-type') || undefined,
       AppRateLimit: headers.get('x-app-rate-limit') || BaseApi.DEFAULT_RATE_LIMIT_VALUE,
@@ -91,7 +91,7 @@ export class BaseApi<Region extends string> {
   // Wraps potentially unknown error types into known error types
   // errors are wrapped in RateLimiErrors and ServiceUnavailable according to status when appropriate
   // ResponseErrors and FetchErrors and any other errors are wrapped into GenericErrors
-  private wrapError(e: any): RateLimitError | ServiceUnavailable | GenericError {
+  private wrapError (e: any): RateLimitError | ServiceUnavailable | GenericError {
     if (e instanceof RateLimitError || e instanceof ServiceUnavailable
       || e instanceof GenericError) {
       return e
@@ -116,7 +116,7 @@ export class BaseApi<Region extends string> {
   // Handles HTTP non-ok error requests
   // Throws FetchError (can't get an answer from the endpoint) from RequestBase.request/.internalRequest
   // or ResponseError (bad response from the endpoint : HTTP not ok, invalid response format...)
-  private internalRequest(request: Request): Promise<Response> {
+  private internalRequest (request: Request): Promise<Response> {
     return RequestBase.request(request)
       .catch((e) => {
         if (e instanceof FetchError || e instanceof ResponseError)
@@ -126,7 +126,7 @@ export class BaseApi<Region extends string> {
       })
   }
 
-  protected getParam(): IBaseApiParams {
+  protected getParam (): IBaseApiParams {
     return {
       key: this.key,
       rateLimitRetry: this.rateLimitRetry,
@@ -142,9 +142,8 @@ export class BaseApi<Region extends string> {
   // Retries according to the retry attempt configuration, API rate limiting configuration and API feedback
   // Throws RateLimitError, ServiceUnavailable, ApiKeyNotFound, 
   // or GenericError (wrapping FetchError, ResponseError, TypeError or other error appropriately)
-  // TODO FIXME : pourquoi queryParams n'est-il jamais utilisé? 
-  protected async request<T>(region: Region | RegionGroups, endpoint: IEndpoint,
-    params?: object | URLSearchParams/*, forceError?: boolean*//*, queryParams?: any*/): Promise<ApiResponseDTO<T>> {
+  protected async request<T> (region: Region | RegionGroups, endpoint: IEndpoint,
+    params?: object | URLSearchParams): Promise<ApiResponseDTO<T>> {
     if (!this.key) {
       throw new ApiKeyNotFound()
     }

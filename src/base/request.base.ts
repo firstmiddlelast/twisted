@@ -7,7 +7,7 @@ export class RequestBase {
 
   // Actually sends a request with all parameters
   // Throws FetchError if something goes wrong when awaited
-  private static async sendRequest(request: Request): Promise<Response> {
+  private static async sendRequest (request: Request): Promise<Response> {
 
     // NOTE : from https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API : 
     // The fetch() method takes one mandatory argument, the path to the resource you want to fetch. 
@@ -26,10 +26,6 @@ export class RequestBase {
     //    The request is blocked by a permissions policy.
     //    There is a network error (for example, because the device does not have connectivity).
 
-
-    // => This differs from the Axios 
-    // => Should error management be changed? 
-
     // NOTE : from https://developer.riotgames.com/docs/portal#web-apis_response-codes
     /*
     For non-200 response codes please be aware of the following:
@@ -46,7 +42,7 @@ export class RequestBase {
     The contents of status, message, and status_code are not guaranteed to always exist or remain constant for a given response code. 
     Logic within your application should fail gracefully based the response code alone, and should not rely on the response body.
     */
-    return fetch(request/*, fetchOptions*/)
+    return fetch(request)
       .catch((e) => {
         throw new FetchError("Fetching " + request.url + " failed. Request : " + JSON.stringify(request), e)
       })
@@ -63,12 +59,12 @@ export class RequestBase {
       })
   }
 
-  static setConcurrency(concurrency: number) {
+  static setConcurrency (concurrency: number) {
     RequestBase.concurrency = concurrency
   }
 
   // Manages request concurrency
-  static request(request: Request): Promise<Response> {
+  static request (request: Request): Promise<Response> {
     if (RequestBase.pending.size < RequestBase.concurrency) {
       const promise = RequestBase.sendRequest(request)
         .finally(() => {
