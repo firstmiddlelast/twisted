@@ -3,7 +3,7 @@ import { ResponseError } from '../errors/response.error';
 
 export class RequestBase {
   private static pending: Set<Promise<Response>> = new Set()
-  private static concurrency: number = Infinity
+  public static concurrency: number = Infinity
 
   // Actually sends a request with all parameters
   // Throws FetchError if something goes wrong when awaited
@@ -57,10 +57,6 @@ export class RequestBase {
         }
         return fetchResponse;
       })
-  }
-
-  static setConcurrency (concurrency: number) {
-    RequestBase.concurrency = concurrency
   }
 
   // Manages request concurrency

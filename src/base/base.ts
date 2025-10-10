@@ -9,10 +9,13 @@ import { RateLimitError } from '../errors/rate-limit.error'
 import { IBaseApiParams, waiter } from './base.utils'
 import { ServiceUnavailable } from '../errors/service-unavailable.error'
 import { BaseConstants, BaseApiGames, BASE_URL_PARAM_REPLACEMENT_REGEXP } from './base.const'
-import { Logger } from './logger.base'
 import { RequestBase } from './request.base'
 import { RegionGroups } from '../constants'
 import { FetchError } from '../errors/fetch.error'
+
+function endpointString (endpoint: IEndpoint) {
+  return `${endpoint.prefix}/${endpoint.path}`;
+}
 
 export class BaseApi<Region extends string> {
   protected readonly game: BaseApiGames = BaseApiGames.LOL
@@ -64,11 +67,7 @@ export class BaseApi<Region extends string> {
       this.baseUrl = param.baseURL
     }
     this.concurrency = param.concurrency
-    if (typeof param.concurrency !== 'undefined') {
-      RequestBase.setConcurrency(param.concurrency)
-    } else {
-      RequestBase.setConcurrency(Infinity)
-    }
+    RequestBase.concurrency = param.concurrency ?? Infinity
   }
 
   // This value only exists for code correctness. 
@@ -213,7 +212,7 @@ export class BaseApi<Region extends string> {
       }
     }
     if (this.debug.logTime) {
-      Logger.start(endpoint, url.toString())
+      console.time(endpointString(endpoint) + `(${url})`)
     }
     // "+1" on the line below because the first attempt does not count as a _REtry_ 
     // and it's _REtries_ that are specified in the parameters
@@ -224,7 +223,7 @@ export class BaseApi<Region extends string> {
     while (result === undefined && attemptsLeft > 0) {
       try {
         if (this.debug.logUrls) {
-          Logger.uri(request, endpoint)
+          console.log(`Calling method url: ${request.url}(${endpoint.path})`)
         }
         responseRateLimits = undefined;
         result = await this.internalRequest(request)
@@ -263,7 +262,7 @@ export class BaseApi<Region extends string> {
       // Successful request return
       if (result !== undefined) {
         if (this.debug.logTime) {
-          Logger.end(endpoint, url.toString())
+          console.timeEnd(endpointString(endpoint) + ` (${url})`)
         }
         return result
       }
@@ -288,7 +287,7 @@ export class BaseApi<Region extends string> {
             responseRateLimits.RetryAfter ??= BaseApi.DEFAULT_RATE_LIMIT_RETRY_AFTER
           const msDelay = (retryDelay * 1000) + (delay * 1000 * Math.random())
           if (this.debug.logRatelimits) {
-            Logger.rateLimit(endpoint, msDelay)
+            console.log((`Waiting ${(msDelay / 1000).toFixed(2)} seconds by rate limit(${endpointString(endpoint)})`))
           }
           await waiter(msDelay)
         }
