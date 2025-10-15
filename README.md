@@ -31,6 +31,9 @@ The ```startChampionUpdates()``` function is started automatically if the ```UPD
 
 You can check the value of ```UPDATE_CHAMPION_IDS``` after the module has been loaded to check which value has been used for the automatic startup delay : 0 means autostart has not been enabled, but you can still call startChampionUpdates manually ; or you could directly call ```updateChampionIds()```. 
 
+### Additional live api tests
+
+Tests in the ```test/live-api.test.ts``` suite need an ```.env``` file with a RIOT env var ```RIOT_API_KEY``` set to a valid API KEY. They perform a couple API calls in order to check everything is working and to test API errors. 
 
 # Twisted
 League of Legends API Wrapper <br>
