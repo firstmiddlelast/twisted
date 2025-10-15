@@ -266,7 +266,7 @@ export function stopChampionUpdates () {
  * 
  */
 export const UPDATE_CHAMPION_IDS = (globalThis['process'] && globalThis['process']['env'] && globalThis['process']['env']['UPDATE_CHAMPION_IDS']) ?
-  Number.isNaN(Number(globalThis['process']['env']['UPDATE_CHAMPION_IDS'])) ?
+  Number.isNaN(Number(globalThis['process']['env']['UPDATE_CHAMPION_IDS'])) || globalThis['process']['env']['UPDATE_CHAMPION_IDS'] === '1' ?
     DAILY_DELAY :
     Number(globalThis['process']['env']['UPDATE_CHAMPION_IDS']) | 0 * 1000 :
   0;

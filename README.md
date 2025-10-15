@@ -2,6 +2,36 @@
 
 > **Note:** This is a fork of the original `twisted` library. The primary goal of this fork is to replace the `axios` dependency with the native `fetch` API to improve browser/Deno compatibility and reduce bundle size. The original README is preserved below for general reference.
 
+## Changes from the original API
+
+### Errors and Exceptions thrown
+In the event of an error during the fetching of API endpoints, the exceptions that are thrown are not AxiosErrors anymore, but instead GenericErrors, wrapping a ```FetchError``` if the API could not access the Riot APIs, a ```ResponseError``` if a result could be fetched but the result could not be transformed into an actual Riot Api object (i.e. the status was not in the OK (200-299) range, or the returned json was broken or could not fit into a Twisted DTO object). 
+
+```FetchError``` may contain an .error field indicating the original error causing the fetch failure. 
+```ResponseError``` has .status and .headers containing the HTTP status and headers returned by the Riot API servers, and may have a .body with more details. 
+```GenericError``` has .rateLimits indicating the Riot-returned rate limiting parameters and a .error field containing the original error, plus a .status field (with ```GenericError.UNDEFINED_STATUS``` = 500 as a default value, so this may not be the actually returned status if the error cause was not an http error response). 
+
+
+### Automatic champions ID change detection
+
+```constants/champions.ts``` (and the library) now export new constants and methods to manually start and stop automatic champion ID updates : 
+
+
+```DAILY_DELAY: number```
+
+```UPDATE_CHAMPION_IDS: number```
+
+```async startChampionUpdates (championUpdateDelay?: number)```
+
+```stopChampionUpdates ()```
+
+```async updateChampionIds ()```
+
+The ```startChampionUpdates()``` function is started automatically if the ```UPDATE_CHAMPION_IDS``` env var is set, starting the schedult update like in the original library. But its value now has a meaning : if the env var is set to a number > 0, this number is interpreted as the interval between champion update attempts in seconds and the autoupdate starts. If it is set, but not to a positive number, the ```DAILY_DELAY``` value is used instead. As a special case, 1 is used as an equivalent to ```DAILY_DELAY```. 
+
+You can check the value of ```UPDATE_CHAMPION_IDS``` after the module has been loaded to check which value has been used for the automatic startup delay : 0 means autostart has not been enabled, but you can still call startChampionUpdates manually ; or you could directly call ```updateChampionIds()```. 
+
+
 # Twisted
 League of Legends API Wrapper <br>
 ![https://www.npmjs.com/package/twisted](https://nodei.co/npm/twisted.png)
